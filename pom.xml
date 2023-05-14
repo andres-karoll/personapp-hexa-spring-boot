@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>co.edu.javeriana.as</groupId>
+	<artifactId>personapp-hexa-spring-boot</artifactId>
+	<version>${revision}</version>
+	<name>PersonAPP</name>
+	<description>App Hexagonal (Clean Architecture) Multi Module PersonAPP</description>
+	<packaging>pom</packaging>
+	<properties>
+		<maven.compiler.source>${global.java.version}</maven.compiler.source>
+		<maven.compiler.target>${global.java.version}</maven.compiler.target>
+		<java.version>${global.java.version}</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<revision>0.0.1-SNAPSHOT</revision>
+		<global.java.version>11</global.java.version>
+		<global.springframework.boot.version>2.7.11</global.springframework.boot.version>
+		<global.springframework.version>5.3.27</global.springframework.version>
+	</properties>
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Andres Sanchez</name>
+			<email>asanchez-m@javeriana.edu.co</email>
+			<organization>Pontificia Universidad Javeriana</organization>
+			<organizationUrl>https://www.javeriana.edu.co</organizationUrl>
+		</developer>
+	</developers>
+	<modules>
+		<module>common</module>
+		<module>domain</module>
+		<module>application</module>
+		<module>maria-output-adapter</module>
+		<module>mongo-output-adapter</module>
+		<module>rest-input-adapter</module>
+		<module>cli-input-adapter</module>
+	</modules>
+	<dependencies>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.26</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-to-slf4j</artifactId>
+			<version>2.20.0</version>
+		</dependency>
+	</dependencies>
+</project>

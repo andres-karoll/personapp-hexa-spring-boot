@@ -1,0 +1,26 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>co.edu.javeriana.as</groupId>
+		<artifactId>personapp-hexa-spring-boot</artifactId>
+		<version>${revision}</version>
+  	</parent>
+	<groupId>co.edu.javeriana.as.personapp</groupId>
+	<artifactId>application</artifactId>
+  	<name>PersonAPP Application</name>
+  	<description>Application (Business Rules) for PersonAPP</description>
+	<dependencies>
+		<dependency>
+			<groupId>co.edu.javeriana.as.personapp</groupId>
+			<artifactId>domain</artifactId>
+			<version>${revision}</version>
+		</dependency>
+		<dependency>
+			<groupId>co.edu.javeriana.as.personapp</groupId>
+			<artifactId>common</artifactId>
+			<version>${revision}</version>
+		</dependency>
+	</dependencies>
+</project>
