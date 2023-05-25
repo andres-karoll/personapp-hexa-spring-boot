@@ -22,6 +22,7 @@ public class Person {
 	private String lastName;
 	@NonNull
 	private Gender gender;
+	@NonNull
 	private Integer age;
 	@ToString.Exclude
 	private List<Phone> phoneNumbers;
