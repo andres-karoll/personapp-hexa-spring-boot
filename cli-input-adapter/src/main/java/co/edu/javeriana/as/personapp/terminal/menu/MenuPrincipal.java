@@ -48,7 +48,8 @@ public class MenuPrincipal {
 				log.info("volvio");
 				break;
 			case MODULO_PROFESION:
-				log.warn("Implementar Menu");
+
+				log.warn("profesion");
 				break;
 			case MODULO_TELEFONO:
 				log.warn("Implementar Menu");
