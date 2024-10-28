@@ -1,5 +1,7 @@
 package co.edu.javeriana.as.personapp.mariadb.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.io.Serializable;
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -30,6 +32,7 @@ public class TelefonoEntity implements Serializable {
 	@Basic(optional = false)
 	@Column(nullable = false, length = 45)
 	private String oper;
+
 	@JoinColumn(name = "duenio", referencedColumnName = "cc", nullable = false)
 	@ManyToOne(optional = false)
 	private PersonaEntity duenio;

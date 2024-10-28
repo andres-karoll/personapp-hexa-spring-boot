@@ -2,6 +2,7 @@ package co.edu.javeriana.as.personapp.application.usecase;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
@@ -17,13 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 @UseCase
 public class PersonUseCase implements PersonInputPort {
 
-	
 	private PersonOutputPort personPersintence;
-	
+
 	public PersonUseCase(@Qualifier("personOutputAdapterMaria") PersonOutputPort personPersintence) {
 		this.personPersintence=personPersintence;
 	}
-	
+
 	@Override
 	public void setPersintence(PersonOutputPort personPersintence) {
 		this.personPersintence=personPersintence;
@@ -32,6 +32,7 @@ public class PersonUseCase implements PersonInputPort {
 	@Override
 	public Person create(Person person) {
 		log.debug("Into create on Application Domain");
+		System.out.println(person.toString());
 		return personPersintence.save(person);
 	}
 
