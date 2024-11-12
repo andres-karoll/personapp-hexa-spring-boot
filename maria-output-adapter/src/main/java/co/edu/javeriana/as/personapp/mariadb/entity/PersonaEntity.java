@@ -1,5 +1,7 @@
 package co.edu.javeriana.as.personapp.mariadb.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -42,8 +44,11 @@ public class PersonaEntity implements Serializable {
 	@Column(nullable = false)
 	private Character genero;
 	private Integer edad;
+
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "duenio")
 	private List<TelefonoEntity> telefonos;
+
+
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "persona")
 	private List<EstudiosEntity> estudios;
 
