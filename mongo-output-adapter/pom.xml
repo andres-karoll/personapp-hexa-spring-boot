@@ -20,7 +20,6 @@
 		<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
-            <version>${global.springframework.boot.version}</version>
         </dependency>
 	</dependencies>
 </project>

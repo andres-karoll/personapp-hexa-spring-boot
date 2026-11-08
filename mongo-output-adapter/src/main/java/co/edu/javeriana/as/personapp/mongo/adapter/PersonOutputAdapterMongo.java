@@ -5,14 +5,14 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.mongodb.MongoWriteException;
-
 import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
 import co.edu.javeriana.as.personapp.domain.Person;
 import co.edu.javeriana.as.personapp.mongo.document.PersonaDocument;
 import co.edu.javeriana.as.personapp.mongo.mapper.PersonaMapperMongo;
+import co.edu.javeriana.as.personapp.mongo.repository.EstudiosRepositoryMongo;
 import co.edu.javeriana.as.personapp.mongo.repository.PersonaRepositoryMongo;
+import co.edu.javeriana.as.personapp.mongo.repository.TelefonoRepositoryMongo;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -24,22 +24,27 @@ public class PersonOutputAdapterMongo implements PersonOutputPort {
 	
 	@Autowired
 	private PersonaMapperMongo personaMapperMongo;
+
+	@Autowired
+	private EstudiosRepositoryMongo studyRepository;
+
+	@Autowired
+	private TelefonoRepositoryMongo phoneRepository;
 	
 	@Override
 	public Person save(Person person) {
 		log.debug("Into save on Adapter MongoDB");
-		try {
-			PersonaDocument persistedPersona = personaRepositoryMongo.save(personaMapperMongo.fromDomainToAdapter(person));
-			return personaMapperMongo.fromAdapterToDomain(persistedPersona);
-		} catch (MongoWriteException e) {
-			log.warn(e.getMessage());
-			return person;
-		}		
+		PersonaDocument persistedPersona = personaRepositoryMongo.save(personaMapperMongo.fromDomainToAdapter(person));
+		return personaMapperMongo.fromAdapterToDomain(persistedPersona);
 	}
 
 	@Override
 	public Boolean delete(Integer identification) {
-		log.debug("Into delete on Adapter MongoDB");
+		log.debug("Into delete on Adapter MongoDB (cascade)");
+		personaRepositoryMongo.findById(identification).ifPresent(p -> {
+			studyRepository.deleteByPersona(identification);
+			phoneRepository.deleteByOwner(identification);
+		});
 		personaRepositoryMongo.deleteById(identification);
 		return personaRepositoryMongo.findById(identification).isEmpty();
 	}

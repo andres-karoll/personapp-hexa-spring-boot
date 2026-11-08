@@ -1,19 +1,19 @@
 package co.edu.javeriana.as.personapp.terminal.adapter;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
 import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
 import co.edu.javeriana.as.personapp.application.usecase.PersonUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
+import co.edu.javeriana.as.personapp.common.setup.PersistenceRegistry;
+import co.edu.javeriana.as.personapp.common.exceptions.AlreadyExistException;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
-import co.edu.javeriana.as.personapp.common.setup.DatabaseOption;
-import co.edu.javeriana.as.personapp.terminal.mapper.PersonaMapperCli;
-import co.edu.javeriana.as.personapp.terminal.model.PersonaModelCli;
+import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
+import co.edu.javeriana.as.personapp.domain.Gender;
+import co.edu.javeriana.as.personapp.domain.Person;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,39 +21,37 @@ import lombok.extern.slf4j.Slf4j;
 public class PersonaInputAdapterCli {
 
 	@Autowired
-	@Qualifier("personOutputAdapterMaria")
-	private PersonOutputPort personOutputPortMaria;
+	private PersistenceRegistry<PersonOutputPort> registry;
 
-	@Autowired
-	@Qualifier("personOutputAdapterMongo")
-	private PersonOutputPort personOutputPortMongo;
+	private PersonInputPort personInputPort;
 
-	@Autowired
-	private PersonaMapperCli personaMapperCli;
-
-	PersonInputPort personInputPort;
-
-	public void setPersonOutputPortInjection(String dbOption) throws InvalidOptionException {
-		if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
-			personInputPort = new PersonUseCase(personOutputPortMaria);
-		} else if (dbOption.equalsIgnoreCase(DatabaseOption.MONGO.toString())) {
-			personInputPort = new PersonUseCase(personOutputPortMongo);
-		} else {
-			throw new InvalidOptionException("Invalid database option: " + dbOption);
-		}
+	public void setDatabase(String database) throws InvalidOptionException {
+		personInputPort = new PersonUseCase(registry.resolve(database));
 	}
 
-	public void historial1() {
-		log.info("Into historial PersonaEntity in Input Adapter");
-		List<PersonaModelCli> persona = personInputPort.findAll().stream().map(personaMapperCli::fromDomainToAdapterCli)
-					.collect(Collectors.toList());
-		persona.forEach(p -> System.out.println(p.toString()));
-	}
-	public void historial() {
-	    log.info("Into historial PersonaEntity in Input Adapter");
-	    personInputPort.findAll().stream()
-	        .map(personaMapperCli::fromDomainToAdapterCli)
-	        .forEach(System.out::println);
+	public List<Person> historial() {
+		return personInputPort.findAll();
 	}
 
+	public Person buscar(Integer identification) throws NoExistException {
+		return personInputPort.findOne(identification);
+	}
+
+	public Person crear(Integer identification, String firstName, String lastName, Gender gender, Integer age)
+			throws AlreadyExistException {
+		Person person = new Person(identification, firstName, lastName, gender);
+		person.setAge(age);
+		return personInputPort.create(person);
+	}
+
+	public Person editar(Integer identification, String firstName, String lastName, Gender gender, Integer age)
+			throws NoExistException {
+		Person person = new Person(identification, firstName, lastName, gender);
+		person.setAge(age);
+		return personInputPort.edit(identification, person);
+	}
+
+	public Boolean eliminar(Integer identification) throws NoExistException {
+		return personInputPort.drop(identification);
+	}
 }

@@ -16,6 +16,6 @@ public class TelefonoDocument {
 	@Id
 	private String id;
 	private String oper;
-	@DocumentReference(lazy = true)
+	@DocumentReference
     private PersonaDocument primaryDuenio;
 }

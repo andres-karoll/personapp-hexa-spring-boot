@@ -11,10 +11,6 @@
 	<artifactId>cli-input-adapter</artifactId>
 	<name>PersonAPP CLI Input Adapter</name>
 	<description>CLI Input Adapter for PersonAPP</description>
-	<properties>
-		<javax.xml.bind.JAXBContextFactory>
-			com.sun.xml.bind.v2.runtime.JAXBContextImpl$FastBoot</javax.xml.bind.JAXBContextFactory>
-	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>co.edu.javeriana.as.personapp</groupId>
@@ -34,24 +30,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
-			<version>${global.springframework.boot.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.xml.bind</groupId>
-			<artifactId>jaxb-api</artifactId>
-			<version>2.3.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.sun.xml.bind</groupId>
-			<artifactId>jaxb-core</artifactId>
-			<version>2.3.0.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.sun.xml.bind</groupId>
-			<artifactId>jaxb-impl</artifactId>
-			<version>2.3.0.1</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -59,7 +37,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>${global.springframework.boot.version}</version>
 				<configuration>
 					<excludes>
 						<exclude>
