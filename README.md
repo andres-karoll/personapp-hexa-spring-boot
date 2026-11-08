@@ -294,7 +294,7 @@ Los casos de uso se prueban sin Spring ni bases de datos, con puertos simulados 
 
 ```bash
 mvn clean verify                   # 21 pruebas unitarias (casos de uso, registro de motores); no necesitan bases ni API
-scripts/run-integration-tests.sh   # levanta Docker Compose y corre 17 pruebas de integración contra la API
+tests/run-integration-tests.sh   # levanta Docker Compose y corre 17 pruebas de integración contra la API
 ```
 
 - **Unitarias** (`*Test`): casos de uso con puertos simulados (Mockito), registro de motores y enum.
