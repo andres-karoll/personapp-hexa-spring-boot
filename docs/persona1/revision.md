@@ -16,6 +16,8 @@ compila completo con JDK 17.0.20 (target Java 11).
 | `domain/.../Gender.java` | `MALE, FEMALE, OTHER` vs columna `genero ENUM('M','F')`: `OTHER` no tiene representación en BD (los mappers lo convierten a `' '`). | Info | **No se cambia** (acuerdo del equipo). El mapeo a `'M'/'F'` es responsabilidad de los adaptadores de salida; se deja anotado para ellos. |
 | `pom.xml` (raíz) → `domain` | `domain` hereda del pom raíz `lombok` (provided) y `log4j-to-slf4j`. No es Spring ni otro módulo, pero `log4j-to-slf4j` no lo usa el dominio. | Info | Se deja igual: moverlo afectaría a todos los módulos (cambio no quirúrgico). `domain` no importa nada de Spring (verificado con grep). |
 | `common/...` | Anotaciones `@Adapter/@Mapper/@UseCase/@Port` y excepciones correctas. | — | Sin cambios. |
+| `common/pom.xml` + pruebas | `common` excluye `spring-aop` de `spring-context`; el `SpringBootMockResolver` de `spring-boot-starter-test` lo necesita y todas las pruebas Mockito fallaban con `NoClassDefFoundError: org/springframework/aop/support/AopUtils` (encontrado al implementar las pruebas). | Media | No tocar la exclusión de producción: agregar `spring-aop` con scope `test` solo en `application/pom.xml`. |
+| `pom.xml` (raíz) | Se usa `${revision}` sin `flatten-maven-plugin`: los poms instalados en `~/.m2` quedaban con `${revision}` literal y cualquier build de un módulo suelto (`mvn -pl rest-input-adapter spring-boot:run`) fallaba con `Could not find artifact ...:pom:${revision}` (encontrado en la verificación). | Media | `flatten-maven-plugin` 1.5.0 en modo `resolveCiFriendliesOnly`, con salida en `target/` para no dejar archivos sin ignorar. |
 
 ## Uso del núcleo por los adaptadores (solo lectura)
 
