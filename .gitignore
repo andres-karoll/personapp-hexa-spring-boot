@@ -71,3 +71,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+logs/
+
+### macOS ###
+.DS_Store
+
+### Maven flatten ###
+.flattened-pom.xml
