@@ -26,19 +26,29 @@ public class PersonaMapperMaria {
 	private TelefonoMapperMaria telefonoMapperMaria;
 
 	public PersonaEntity fromDomainToAdapter(Person person) {
+		PersonaEntity personaEntity = fromDomainToAdapterShallow(person);
+		personaEntity.setEstudios(validateEstudios(person.getStudies()));
+		personaEntity.setTelefonos(validateTelefonos(person.getPhoneNumbers()));
+		return personaEntity;
+	}
+
+	public PersonaEntity fromDomainToAdapterShallow(Person person) {
 		PersonaEntity personaEntity = new PersonaEntity();
 		personaEntity.setCc(person.getIdentification());
 		personaEntity.setNombre(person.getFirstName());
 		personaEntity.setApellido(person.getLastName());
 		personaEntity.setGenero(validateGenero(person.getGender()));
 		personaEntity.setEdad(validateEdad(person.getAge()));
-		personaEntity.setEstudios(validateEstudios(person.getStudies()));
-		personaEntity.setTelefonos(validateTelefonos(person.getPhoneNumbers()));
 		return personaEntity;
 	}
 
-	private Character validateGenero(@NonNull Gender gender) {
-		return gender == Gender.FEMALE ? 'F' : gender == Gender.MALE ? 'M' : ' ';
+	private Character validateGenero(Gender gender) {
+		if (gender == Gender.FEMALE)
+			return 'F';
+		if (gender == Gender.MALE)
+			return 'M';
+		throw new IllegalArgumentException(
+				"Gender " + gender + " is not supported by MariaDB, only MALE (M) or FEMALE (F) are allowed");
 	}
 
 	private Integer validateEdad(Integer age) {
@@ -58,14 +68,19 @@ public class PersonaMapperMaria {
 	}
 
 	public Person fromAdapterToDomain(PersonaEntity personaEntity) {
+		Person person = fromAdapterToDomainShallow(personaEntity);
+		person.setStudies(validateStudies(personaEntity.getEstudios()));
+		person.setPhoneNumbers(validatePhones(personaEntity.getTelefonos()));
+		return person;
+	}
+
+	public Person fromAdapterToDomainShallow(PersonaEntity personaEntity) {
 		Person person = new Person();
 		person.setIdentification(personaEntity.getCc());
 		person.setFirstName(personaEntity.getNombre());
 		person.setLastName(personaEntity.getApellido());
 		person.setGender(validateGender(personaEntity.getGenero()));
 		person.setAge(validateAge(personaEntity.getEdad()));
-		person.setStudies(validateStudies(personaEntity.getEstudios()));
-		person.setPhoneNumbers(validatePhones(personaEntity.getTelefonos()));
 		return person;
 	}
 

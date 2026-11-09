@@ -22,5 +22,17 @@
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
             <version>${global.springframework.boot.version}</version>
         </dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<version>${global.springframework.boot.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-aop</artifactId>
+			<version>${global.springframework.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>

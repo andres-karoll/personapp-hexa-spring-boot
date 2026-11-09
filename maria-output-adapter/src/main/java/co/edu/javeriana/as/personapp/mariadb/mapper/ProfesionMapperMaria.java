@@ -19,11 +19,16 @@ public class ProfesionMapperMaria {
 	private EstudiosMapperMaria estudiosMapperMaria;
 
 	public ProfesionEntity fromDomainToAdapter(Profession profession) {
+		ProfesionEntity profesionEntity = fromDomainToAdapterShallow(profession);
+		profesionEntity.setEstudios(validateEstudios(profession.getStudies()));
+		return profesionEntity;
+	}
+
+	public ProfesionEntity fromDomainToAdapterShallow(Profession profession) {
 		ProfesionEntity profesionEntity = new ProfesionEntity();
 		profesionEntity.setId(profession.getIdentification());
 		profesionEntity.setNom(profession.getName());
 		profesionEntity.setDes(validateDes(profession.getDescription()));
-		profesionEntity.setEstudios(validateEstudios(profession.getStudies()));
 		return profesionEntity;
 	}
 
@@ -38,11 +43,16 @@ public class ProfesionMapperMaria {
 	}
 
 	public Profession fromAdapterToDomain(ProfesionEntity profesionEntity) {
+		Profession profession = fromAdapterToDomainShallow(profesionEntity);
+		profession.setStudies(validateStudies(profesionEntity.getEstudios()));
+		return profession;
+	}
+
+	public Profession fromAdapterToDomainShallow(ProfesionEntity profesionEntity) {
 		Profession profession = new Profession();
 		profession.setIdentification(profesionEntity.getId());
 		profession.setName(profesionEntity.getNom());
 		profession.setDescription(validateDescription(profesionEntity.getDes()));
-		profession.setStudies(validateStudies(profesionEntity.getEstudios()));
 		return profession;
 	}
 

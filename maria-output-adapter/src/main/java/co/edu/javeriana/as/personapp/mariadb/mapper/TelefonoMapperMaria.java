@@ -24,7 +24,7 @@ public class TelefonoMapperMaria {
 	}
 
 	private PersonaEntity validateDuenio(@NonNull Person owner) {
-		return owner != null ? personaMapperMaria.fromDomainToAdapter(owner) : new PersonaEntity();
+		return owner != null ? personaMapperMaria.fromDomainToAdapterShallow(owner) : new PersonaEntity();
 	}
 
 	public Phone fromAdapterToDomain(TelefonoEntity telefonoEntity) {
@@ -36,6 +36,6 @@ public class TelefonoMapperMaria {
 	}
 
 	private @NonNull Person validateOwner(PersonaEntity duenio) {
-		return duenio != null ? personaMapperMaria.fromAdapterToDomain(duenio) : new Person();
+		return duenio != null ? personaMapperMaria.fromAdapterToDomainShallow(duenio) : new Person();
 	}
 }

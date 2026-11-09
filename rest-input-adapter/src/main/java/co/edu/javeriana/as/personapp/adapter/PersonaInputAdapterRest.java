@@ -38,10 +38,10 @@ public class PersonaInputAdapterRest {
 	PersonInputPort personInputPort;
 
 	private String setPersonOutputPortInjection(String dbOption) throws InvalidOptionException {
-		if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
+		if (DatabaseOption.MARIA.toString().equalsIgnoreCase(dbOption)) {
 			personInputPort = new PersonUseCase(personOutputPortMaria);
 			return DatabaseOption.MARIA.toString();
-		} else if (dbOption.equalsIgnoreCase(DatabaseOption.MONGO.toString())) {
+		} else if (DatabaseOption.MONGO.toString().equalsIgnoreCase(dbOption)) {
 			personInputPort = new PersonUseCase(personOutputPortMongo);
 			return  DatabaseOption.MONGO.toString();
 		} else {
@@ -68,14 +68,16 @@ public class PersonaInputAdapterRest {
 
 	public PersonaResponse crearPersona(PersonaRequest request) {
 		try {
-			setPersonOutputPortInjection(request.getDatabase());
+			String database = setPersonOutputPortInjection(request.getDatabase());
 			Person person = personInputPort.create(personaMapperRest.fromAdapterToDomain(request));
-			return personaMapperRest.fromDomainToAdapterRestMaria(person);
-		} catch (InvalidOptionException e) {
+			return database.equalsIgnoreCase(DatabaseOption.MARIA.toString())
+					? personaMapperRest.fromDomainToAdapterRestMaria(person)
+					: personaMapperRest.fromDomainToAdapterRestMongo(person);
+		} catch (InvalidOptionException | IllegalArgumentException e) {
 			log.warn(e.getMessage());
-			//return new PersonaResponse("", "", "", "", "", "", "");
+			return new PersonaResponse(request.getDni(), request.getFirstName(), request.getLastName(),
+					request.getAge(), request.getSex(), request.getDatabase(), "ERROR: " + e.getMessage());
 		}
-		return null;
 	}
 
 }
