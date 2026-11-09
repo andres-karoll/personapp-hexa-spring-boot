@@ -10,15 +10,14 @@
 	<description>App Hexagonal (Clean Architecture) Multi Module PersonAPP</description>
 	<packaging>pom</packaging>
 	<properties>
-		<maven.compiler.source>${global.java.version}</maven.compiler.source>
-		<maven.compiler.target>${global.java.version}</maven.compiler.target>
+		<maven.compiler.release>${global.java.version}</maven.compiler.release>
 		<java.version>${global.java.version}</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<revision>0.0.1-SNAPSHOT</revision>
 		<global.java.version>11</global.java.version>
-		<global.springframework.boot.version>2.7.11</global.springframework.boot.version>
-		<global.springframework.version>5.3.27</global.springframework.version>
+		<global.springframework.boot.version>2.7.18</global.springframework.boot.version>
+		<global.springframework.version>5.3.31</global.springframework.version>
 	</properties>
 	<licenses>
 		<license>
