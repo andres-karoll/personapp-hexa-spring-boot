@@ -127,9 +127,11 @@ Crear estas clases anotadas con `@Adapter("<nombre exacto>")`, igual que `Person
 - `findById` → `null` si no existe (no lanzar excepción ahí).
 - `delete` → `true`/`false` según si quedó borrado.
 - En Maria, la PK de `estudios` es compuesta: construir el `EstudiosEntityPK(idProf, ccPer)` en ese orden.
-- `Gender` sigue siendo `MALE, FEMALE, OTHER` (no se cambió). La columna es `ENUM('M','F')`; hoy los
-  mappers convierten `OTHER` a `' '`, que la BD rechaza. Decidir en los adaptadores (validar o rechazar
-  `OTHER` antes de guardar).
+- `Gender` sigue siendo `MALE, FEMALE, OTHER` (no se cambió). La columna es `ENUM('M','F')`: desde la
+  rama `fix-plantilla` los mappers de Persona (Maria y Mongo) lanzan `IllegalArgumentException` si el
+  género es `OTHER` o `null` (ver [docs/fix-plantilla.md](../fix-plantilla.md)).
+- En `EstudiosMapper` y `TelefonoMapper` usar `fromDomainToAdapterShallow` / `fromAdapterToDomainShallow`
+  de `PersonaMapper` y `ProfesionMapper` para la persona o profesión relacionada (evita recursión).
 - `Person.isValidAge()` ahora acepta `age == null` (edad opcional).
 
 > **Importante:** las apps escanean `co.edu.javeriana.as.personapp`, así que `ProfessionUseCase`,
@@ -165,6 +167,7 @@ Con JDK 17 instalado el código se compila con `--release 11`, así que solo se 
 | 6 | `pom.xml` raíz | `${revision}` quedaba literal en los poms instalados; fallaba compilar un módulo suelto. | `flatten-maven-plugin` 1.5.0 (`resolveCiFriendliesOnly`, salida en `target/`). |
 | 7 | `application` | Solo Persona. | Puertos in/out y casos de uso de Profesión, Estudio y Teléfono. |
 | 8 | `application/pom.xml` | Sin pruebas. | `spring-boot-starter-test` y `spring-aop` (scope `test`) + 34 pruebas JUnit 5/Mockito. |
+| 9 | `pom.xml` raíz | Lombok 1.18.26 (no compila con JDK 21). | Lombok 1.18.36, compatible con JDK 11, 17 y 21. |
 
 ## 6. Decisiones tomadas
 
@@ -178,8 +181,8 @@ Con JDK 17 instalado el código se compila con `--release 11`, así que solo se 
 - **`log4j-to-slf4j` heredado por `domain`** se deja: moverlo del pom raíz afecta a todos los módulos.
 - **Flatten en `target/`**: `.gitignore` no es de mi parte, así que el pom aplanado se genera dentro
   de `target/` (ya ignorado).
-- No se crearon adaptadores ni se probó el arranque con BD (no hay MariaDB/MongoDB locales); el arranque
-  queda pendiente de los beans de los compañeros.
+- No se crearon adaptadores. Con `docker compose up -d` se confirmó que las apps solo fallan al arrancar
+  por los beans de Profesión/Estudio/Teléfono que faltan (pendiente de Persona 2).
 
 ## 7. Verificación
 
