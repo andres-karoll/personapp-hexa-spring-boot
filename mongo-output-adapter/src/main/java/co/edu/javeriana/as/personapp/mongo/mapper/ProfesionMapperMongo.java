@@ -19,11 +19,16 @@ public class ProfesionMapperMongo {
 	private EstudiosMapperMongo estudiosMapperMongo;
 
 	public ProfesionDocument fromDomainToAdapter(Profession profession) {
+		ProfesionDocument profesionDocument = fromDomainToAdapterShallow(profession);
+		profesionDocument.setEstudios(validateEstudios(profession.getStudies()));
+		return profesionDocument;
+	}
+
+	public ProfesionDocument fromDomainToAdapterShallow(Profession profession) {
 		ProfesionDocument profesionDocument = new ProfesionDocument();
 		profesionDocument.setId(profession.getIdentification());
 		profesionDocument.setNom(profession.getName());
 		profesionDocument.setDes(validateDes(profession.getDescription()));
-		profesionDocument.setEstudios(validateEstudios(profession.getStudies()));
 		return profesionDocument;
 	}
 
@@ -38,11 +43,16 @@ public class ProfesionMapperMongo {
 	}
 
 	public Profession fromAdapterToDomain(ProfesionDocument profesionDocument) {
+		Profession profession = fromAdapterToDomainShallow(profesionDocument);
+		profession.setStudies(validateStudies(profesionDocument.getEstudios()));
+		return profession;
+	}
+
+	public Profession fromAdapterToDomainShallow(ProfesionDocument profesionDocument) {
 		Profession profession = new Profession();
 		profession.setIdentification(profesionDocument.getId());
 		profession.setName(profesionDocument.getNom());
 		profession.setDescription(validateDescription(profesionDocument.getDes()));
-		profession.setStudies(validateStudies(profesionDocument.getEstudios()));
 		return profession;
 	}
 

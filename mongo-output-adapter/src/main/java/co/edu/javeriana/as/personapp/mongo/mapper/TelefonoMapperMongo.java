@@ -24,7 +24,7 @@ public class TelefonoMapperMongo {
 	}
 
 	private PersonaDocument validateDuenio(@NonNull Person owner) {
-		return owner != null ? personaMapperMongo.fromDomainToAdapter(owner) : new PersonaDocument();
+		return owner != null ? personaMapperMongo.fromDomainToAdapterShallow(owner) : new PersonaDocument();
 	}
 
 	public Phone fromAdapterToDomain(TelefonoDocument telefonoDocument) {
@@ -36,6 +36,6 @@ public class TelefonoMapperMongo {
 	}
 
 	private @NonNull Person validateOwner(PersonaDocument duenio) {
-		return duenio != null ? personaMapperMongo.fromAdapterToDomain(duenio) : new Person();
+		return duenio != null ? personaMapperMongo.fromAdapterToDomainShallow(duenio) : new Person();
 	}
 }
