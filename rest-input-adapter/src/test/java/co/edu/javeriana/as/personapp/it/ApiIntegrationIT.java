@@ -165,6 +165,25 @@ class ApiIntegrationIT {
 		expect(204, call("DELETE", "/persona/" + db + "/" + persona, null));
 	}
 
+	// ---------- validación de entrada (400, nunca 409 ni 500) ----------
+
+	@ParameterizedTest
+	@ValueSource(strings = {"maria", "mongo"})
+	void entradaInvalidaRespondeBadRequest(String db) throws Exception {
+		String largo = "A".repeat(60);
+		expect(400, call("POST", "/persona", "{\"dni\":\"abc\",\"firstName\":\"A\",\"lastName\":\"B\",\"age\":\"1\",\"sex\":\"M\",\"database\":\"" + db + "\"}"));
+		expect(400, call("POST", "/persona", "{\"dni\":\"-1\",\"firstName\":\"A\",\"lastName\":\"B\",\"age\":\"1\",\"sex\":\"M\",\"database\":\"" + db + "\"}"));
+		expect(400, call("POST", "/persona", "{\"dni\":\"700000001\",\"firstName\":\"A\",\"lastName\":\"B\",\"age\":\"1\",\"sex\":\"X\",\"database\":\"" + db + "\"}"));
+		expect(400, call("POST", "/persona", "{\"dni\":\"700000002\",\"firstName\":\"A\",\"lastName\":\"B\",\"age\":\"-5\",\"sex\":\"M\",\"database\":\"" + db + "\"}"));
+		expect(400, call("POST", "/persona", "{\"dni\":\"700000003\",\"firstName\":\"" + largo + "\",\"lastName\":\"B\",\"age\":\"1\",\"sex\":\"M\",\"database\":\"" + db + "\"}"));
+		expect(400, call("POST", "/persona", "{\"dni\":\"700000004\",\"lastName\":\"B\",\"age\":\"1\",\"sex\":\"M\",\"database\":\"" + db + "\"}"));
+		expect(400, call("POST", "/profesion", profesionJson(randomProfessionId(), "N".repeat(91), db)));
+		expect(400, call("POST", "/telefono", telefonoJson("", "Claro", randomPersonId(), db)));
+		expect(400, call("POST", "/telefono", telefonoJson("1".repeat(16), "Claro", randomPersonId(), db)));
+		expect(400, call("POST", "/estudio", estudioJson(147258369, 3, "2020/01/01", "U", db)));
+		expect(404, call("DELETE", "/telefono/" + db + "/0000000000", null));
+	}
+
 	// ---------- utilidades ----------
 
 	private static HttpResponse<String> call(String method, String path, String body) throws Exception {

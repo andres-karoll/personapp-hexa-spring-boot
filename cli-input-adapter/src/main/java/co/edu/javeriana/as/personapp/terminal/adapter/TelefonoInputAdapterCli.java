@@ -8,6 +8,7 @@ import co.edu.javeriana.as.personapp.application.port.in.PhoneInputPort;
 import co.edu.javeriana.as.personapp.application.port.out.PhoneOutputPort;
 import co.edu.javeriana.as.personapp.application.usecase.PhoneUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
+import co.edu.javeriana.as.personapp.common.validation.Entrada;
 import co.edu.javeriana.as.personapp.common.setup.PersistenceRegistry;
 import co.edu.javeriana.as.personapp.common.exceptions.AlreadyExistException;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
@@ -49,7 +50,8 @@ public class TelefonoInputAdapterCli {
 
 	private Phone build(String numero, String operador, Integer duenio) {
 		Person owner = new Person();
-		owner.setIdentification(duenio);
-		return new Phone(numero, operador, owner);
+		owner.setIdentification(Entrada.positivo("duenio", duenio));
+		return new Phone(Entrada.texto("numero", numero, Entrada.MAX_NUMERO_TELEFONO),
+				Entrada.texto("operador", operador, Entrada.MAX_OPERADOR), owner);
 	}
 }

@@ -8,6 +8,7 @@ import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
 import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
 import co.edu.javeriana.as.personapp.application.usecase.PersonUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
+import co.edu.javeriana.as.personapp.common.validation.Entrada;
 import co.edu.javeriana.as.personapp.common.setup.PersistenceRegistry;
 import co.edu.javeriana.as.personapp.common.exceptions.AlreadyExistException;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
@@ -39,15 +40,17 @@ public class PersonaInputAdapterCli {
 
 	public Person crear(Integer identification, String firstName, String lastName, Gender gender, Integer age)
 			throws AlreadyExistException {
-		Person person = new Person(identification, firstName, lastName, gender);
-		person.setAge(age);
+		Person person = new Person(Entrada.positivo("cedula", identification), Entrada.texto("nombre", firstName, Entrada.MAX_NOMBRE),
+				Entrada.texto("apellido", lastName, Entrada.MAX_NOMBRE), gender);
+		person.setAge(Entrada.rangoEdad("edad", age));
 		return personInputPort.create(person);
 	}
 
 	public Person editar(Integer identification, String firstName, String lastName, Gender gender, Integer age)
 			throws NoExistException {
-		Person person = new Person(identification, firstName, lastName, gender);
-		person.setAge(age);
+		Person person = new Person(Entrada.positivo("cedula", identification), Entrada.texto("nombre", firstName, Entrada.MAX_NOMBRE),
+				Entrada.texto("apellido", lastName, Entrada.MAX_NOMBRE), gender);
+		person.setAge(Entrada.rangoEdad("edad", age));
 		return personInputPort.edit(identification, person);
 	}
 

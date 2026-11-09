@@ -2,6 +2,9 @@ package co.edu.javeriana.as.personapp.terminal.menu;
 
 import java.util.Scanner;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectRetrievalFailureException;
+
 import co.edu.javeriana.as.personapp.common.exceptions.AlreadyExistException;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
 import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
@@ -85,6 +88,8 @@ public abstract class MenuBase {
 				ejecutar(opcion);
 			} catch (NoExistException | AlreadyExistException e) {
 				System.out.println("Error: " + e.getMessage());
+			} catch (DataIntegrityViolationException | ObjectRetrievalFailureException e) {
+				System.out.println("Error: llave duplicada o referencia inexistente (llave foránea).");
 			} catch (RuntimeException e) {
 				System.out.println("Datos inválidos: " + e.getMessage());
 			}

@@ -8,6 +8,7 @@ import co.edu.javeriana.as.personapp.application.port.in.ProfessionInputPort;
 import co.edu.javeriana.as.personapp.application.port.out.ProfessionOutputPort;
 import co.edu.javeriana.as.personapp.application.usecase.ProfessionUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
+import co.edu.javeriana.as.personapp.common.validation.Entrada;
 import co.edu.javeriana.as.personapp.common.setup.PersistenceRegistry;
 import co.edu.javeriana.as.personapp.common.exceptions.AlreadyExistException;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
@@ -47,7 +48,8 @@ public class ProfesionInputAdapterCli {
 	}
 
 	private Profession build(Integer id, String nombre, String descripcion) {
-		Profession profession = new Profession(id, nombre);
+		Profession profession = new Profession(Entrada.positivo("id", id),
+				Entrada.texto("nombre", nombre, Entrada.MAX_NOMBRE_PROFESION));
 		profession.setDescription(descripcion);
 		return profession;
 	}

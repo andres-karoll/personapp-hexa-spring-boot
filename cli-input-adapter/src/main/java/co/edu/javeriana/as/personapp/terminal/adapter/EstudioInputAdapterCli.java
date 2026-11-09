@@ -9,6 +9,7 @@ import co.edu.javeriana.as.personapp.application.port.in.StudyInputPort;
 import co.edu.javeriana.as.personapp.application.port.out.StudyOutputPort;
 import co.edu.javeriana.as.personapp.application.usecase.StudyUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
+import co.edu.javeriana.as.personapp.common.validation.Entrada;
 import co.edu.javeriana.as.personapp.common.setup.PersistenceRegistry;
 import co.edu.javeriana.as.personapp.common.exceptions.AlreadyExistException;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
@@ -53,10 +54,10 @@ public class EstudioInputAdapterCli {
 
 	private Study build(Integer dniPersona, Integer idProfesion, LocalDate fecha, String universidad) {
 		Person person = new Person();
-		person.setIdentification(dniPersona);
-		Study study = new Study(person, new Profession(idProfesion, ""));
+		person.setIdentification(Entrada.positivo("dniPersona", dniPersona));
+		Study study = new Study(person, new Profession(Entrada.positivo("idProfesion", idProfesion), ""));
 		study.setGraduationDate(fecha);
-		study.setUniversityName(universidad);
+		study.setUniversityName(Entrada.textoOpcional("universidad", universidad, Entrada.MAX_UNIVERSIDAD));
 		return study;
 	}
 }

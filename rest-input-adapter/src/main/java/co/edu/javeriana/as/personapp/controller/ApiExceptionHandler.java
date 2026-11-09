@@ -1,5 +1,6 @@
 package co.edu.javeriana.as.personapp.controller;
 
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,7 +42,7 @@ public class ApiExceptionHandler {
 				"Violación de integridad: llave duplicada o referencia inexistente (llave foránea)");
 	}
 
-	@ExceptionHandler({IllegalArgumentException.class, NullPointerException.class})
+	@ExceptionHandler({IllegalArgumentException.class, NullPointerException.class, DateTimeException.class})
 	public ResponseEntity<Response> invalidData(RuntimeException e) {
 		log.warn("Invalid data in request", e);
 		return build(HttpStatus.BAD_REQUEST, "Datos de entrada inválidos: " + e.getMessage());

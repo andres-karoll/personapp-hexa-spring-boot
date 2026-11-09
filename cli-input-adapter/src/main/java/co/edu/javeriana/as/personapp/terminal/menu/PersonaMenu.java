@@ -65,8 +65,14 @@ public class PersonaMenu extends MenuBase {
 	}
 
 	private Gender leerGenero() {
-		String g = Consola.leerTexto(keyboard, "Género (M/F/O): ").toUpperCase();
-		return g.equals("M") ? Gender.MALE : g.equals("F") ? Gender.FEMALE : Gender.OTHER;
+		while (true) {
+			String genero = Consola.leerTexto(keyboard, "Género (M/F): ").toUpperCase();
+			if (genero.equals("M"))
+				return Gender.MALE;
+			if (genero.equals("F"))
+				return Gender.FEMALE;
+			System.out.println("Ingrese M o F.");
+		}
 	}
 
 	private Integer leerEdad() {
