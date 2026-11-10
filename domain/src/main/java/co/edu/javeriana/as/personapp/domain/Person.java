@@ -29,6 +29,6 @@ public class Person {
 	private List<Study> studies;
 
 	public Boolean isValidAge() {
-		return this.age >= 0;
+		return this.age != null && this.age >= 0;
 	}
 }
