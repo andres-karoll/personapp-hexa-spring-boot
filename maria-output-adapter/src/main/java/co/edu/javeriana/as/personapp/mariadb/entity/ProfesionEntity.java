@@ -35,7 +35,7 @@ public class ProfesionEntity implements Serializable {
 	@Lob
 	@Column(length = 65535)
 	private String des;
-	@OneToMany(cascade = CascadeType.ALL, mappedBy = "profesion")
+	@OneToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE }, mappedBy = "profesion")
 	private List<EstudiosEntity> estudios;
 
 	public ProfesionEntity() {

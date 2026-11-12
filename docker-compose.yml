@@ -1,8 +1,8 @@
-# Bases de datos de PersonAPP para desarrollo local.
+# Bases de datos y aplicaciones de PersonAPP.
 # Credenciales y puertos iguales a los application.properties de rest-input-adapter y cli-input-adapter.
 # Los scripts de /scripts se ejecutan solo la primera vez (volumen vacío), en orden DDL -> DML.
 # Para reinicializar: docker compose down -v && docker compose up -d
-# Persona 2 agregará aquí los servicios de las apps (REST y CLI) con sus Dockerfiles.
+# REST inicia por defecto; CLI se ejecuta con docker compose run --rm cli.
 
 services:
   mariadb:
@@ -41,6 +41,44 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  rest:
+    build:
+      context: .
+      dockerfile: Dockerfile.rest
+    ports:
+      - "${REST_PORT:-3000}:3000"
+    environment: &app-environment
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/persona_db
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-persona_db}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-persona_db}
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_DATA_MONGODB_DATABASE: persona_db
+      SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
+      SPRING_DATA_MONGODB_USERNAME: ${MONGO_USER:-persona_db}
+      SPRING_DATA_MONGODB_PASSWORD: ${MONGO_PASSWORD:-persona_db}
+    depends_on: &database-dependencies
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/3000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  cli:
+    profiles: ["cli"]
+    build:
+      context: .
+      dockerfile: Dockerfile.cli
+    environment: *app-environment
+    depends_on: *database-dependencies
+    stdin_open: true
+    tty: true
 
 volumes:
   mariadb_data:

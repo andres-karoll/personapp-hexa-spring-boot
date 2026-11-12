@@ -49,6 +49,7 @@ public class ProfesionMapperMaria {
 	}
 
 	public Profession fromAdapterToDomainShallow(ProfesionEntity profesionEntity) {
+        if (profesionEntity == null) return new Profession();
 		Profession profession = new Profession();
 		profession.setIdentification(profesionEntity.getId());
 		profession.setName(profesionEntity.getNom());

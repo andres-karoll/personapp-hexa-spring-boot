@@ -70,18 +70,15 @@ mvn -pl cli-input-adapter spring-boot:run
 Para reiniciar las bases de datos desde cero: `docker compose down -v && docker compose up -d`.
 Credenciales: usuario, clave y base `persona_db` en ambos motores (ver `application.properties`).
 
-> **Mientras Persona 2 no cree los adaptadores de Profesión, Estudio y Teléfono, las apps REST y CLI no
-> arrancan** (`Parameter 0 of constructor in ...PhoneUseCase required a bean of type PhoneOutputPort`).
-> Es un pendiente esperado. Para probar Persona mientras tanto, se puede arrancar con inicialización
-> perezosa:
-> `mvn -pl rest-input-adapter spring-boot:run -Dspring-boot.run.arguments=--spring.main.lazy-initialization=true`
+Los adaptadores de Profesión, Estudio y Teléfono ya están disponibles. Las aplicaciones pueden
+arrancar con inicialización normal; no requieren activar inicialización perezosa para omitir beans.
 
 ## Estado actual
 
 | Persona | Hecho | Pendiente |
 |---|---|---|
 | 1 — Núcleo y Maven | Puertos y casos de uso de las 4 entidades, pruebas, correcciones del núcleo, CI, `docker-compose` de BD, corrección de la plantilla. | — |
-| 2 — Persistencia y Docker | Persona en MariaDB y MongoDB; mappers corregidos (sin recursión, género validado); scripts inicializan los contenedores. | Adaptadores de salida de Profesión, Estudio y Teléfono (Maria y Mongo) con los nombres de bean acordados; Dockerfiles y servicios de las apps en `docker-compose.yml`. |
+| 2 — Persistencia y Docker | Adaptadores de las cuatro entidades en MariaDB y MongoDB; mappers, integridad, pruebas reales, Dockerfiles y servicios REST/CLI. | Ver resultados y límites en `docs/persona2/RESULTADOS.md`. |
 | 3 — REST, CLI y Swagger | REST: listar y crear persona (MARIA/MONGO) con validación de datos. CLI: listar personas. | CRUD completo (editar, borrar, buscar, contar) de las 4 entidades en REST y CLI, códigos HTTP adecuados y documentación Swagger. |
 
 Probado (2026-11-09): `GET /api/v1/persona/{maria|mongo}` y `POST /api/v1/persona` contra ambas bases,
@@ -94,3 +91,22 @@ y "ver todas las personas" en la CLI con ambos motores.
   para los adaptadores.
 - [docs/persona1/revision.md](docs/persona1/revision.md): revisión del núcleo.
 - [docs/fix-plantilla.md](docs/fix-plantilla.md): errores de la plantilla y cómo se corrigieron.
+
+
+## Persona 2: persistencia y solución containerizada
+
+Los adaptadores de Profession, Study y Phone están implementados para MariaDB y MongoDB. La documentación de diseño, relaciones, configuración y pruebas está en [docs/persona2/README.md](docs/persona2/README.md); el detalle de cambios y resultados en [RESULTADOS.md](docs/persona2/RESULTADOS.md), y la [guía de sustentación](docs/persona2/GUIA_ESTUDIO.md) referencia archivos y métodos.
+
+```bash
+# Solución completa: bases y API REST (conserva volúmenes existentes)
+docker compose up -d --build rest
+docker compose ps
+# CLI interactiva
+docker compose build cli
+docker compose run --rm cli
+# Solo bases, para desarrollo local y pruebas reales
+docker compose up -d mariadb mongodb
+mvn clean install -Dpersistence.integration=true
+```
+
+Las instrucciones previas de arranque local siguen disponibles; `docker compose up -d` ahora incluye REST. Dentro de Docker las conexiones usan los servicios `mariadb` y `mongodb`. Los scripts de inicialización se ejecutan únicamente al crear volúmenes vacíos.

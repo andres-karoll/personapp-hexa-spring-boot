@@ -75,6 +75,7 @@ public class PersonaMapperMongo {
 	}
 
 	public Person fromAdapterToDomainShallow(PersonaDocument personaDocument) {
+        if (personaDocument == null) return new Person();
 		Person person = new Person();
 		person.setIdentification(personaDocument.getId());
 		person.setFirstName(personaDocument.getNombre());

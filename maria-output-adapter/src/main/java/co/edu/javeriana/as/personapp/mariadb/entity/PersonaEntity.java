@@ -42,9 +42,9 @@ public class PersonaEntity implements Serializable {
 	@Column(nullable = false)
 	private Character genero;
 	private Integer edad;
-	@OneToMany(cascade = CascadeType.ALL, mappedBy = "duenio")
+	@OneToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE }, mappedBy = "duenio")
 	private List<TelefonoEntity> telefonos;
-	@OneToMany(cascade = CascadeType.ALL, mappedBy = "persona")
+	@OneToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE }, mappedBy = "persona")
 	private List<EstudiosEntity> estudios;
 
 	public PersonaEntity() {

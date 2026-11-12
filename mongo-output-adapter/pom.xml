@@ -32,7 +32,6 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-aop</artifactId>
 			<version>${global.springframework.version}</version>
-			<scope>test</scope>
 		</dependency>
 	</dependencies>
 </project>

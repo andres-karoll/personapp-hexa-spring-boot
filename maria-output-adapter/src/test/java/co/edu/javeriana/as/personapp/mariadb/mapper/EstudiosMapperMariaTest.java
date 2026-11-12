@@ -58,4 +58,28 @@ class EstudiosMapperMariaTest {
 		verify(profesionMapperMaria).fromAdapterToDomainShallow(estudio.getProfesion());
 		verify(profesionMapperMaria, never()).fromAdapterToDomain(any());
 	}
+
+    @Test
+    void sqlDateAndMissingRelationsRetainCompositeIdentifiers() {
+        EstudiosEntity entity = new EstudiosEntity(7, 123);
+        entity.setFecha(java.sql.Date.valueOf("2024-02-29"));
+        Study result = estudiosMapperMaria.fromAdapterToDomain(entity);
+        assertEquals(LocalDate.of(2024, 2, 29), result.getGraduationDate());
+        assertEquals(123, result.getPerson().getIdentification());
+        assertEquals(7, result.getProfession().getIdentification());
+    }
+
+    @Test
+    void domainMappingSetsBothParentsWithoutRecursion() {
+        co.edu.javeriana.as.personapp.domain.Person person = new co.edu.javeriana.as.personapp.domain.Person(
+            123, "Ana", "Perez", co.edu.javeriana.as.personapp.domain.Gender.FEMALE);
+        co.edu.javeriana.as.personapp.domain.Profession profession = new co.edu.javeriana.as.personapp.domain.Profession(7, "Ingenieria");
+        Study study = new Study(person, profession);
+        person.setStudies(java.util.List.of(study));
+        profession.setStudies(java.util.List.of(study));
+        EstudiosEntity entity = estudiosMapperMaria.fromDomainToAdapter(study);
+        assertEquals(123, entity.getPersona().getCc());
+        assertEquals(7, entity.getProfesion().getId());
+        assertEquals(new co.edu.javeriana.as.personapp.mariadb.entity.EstudiosEntityPK(7, 123), entity.getEstudiosPK());
+    }
 }

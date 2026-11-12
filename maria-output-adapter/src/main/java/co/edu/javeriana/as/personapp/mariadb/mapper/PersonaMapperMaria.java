@@ -75,6 +75,7 @@ public class PersonaMapperMaria {
 	}
 
 	public Person fromAdapterToDomainShallow(PersonaEntity personaEntity) {
+        if (personaEntity == null) return new Person();
 		Person person = new Person();
 		person.setIdentification(personaEntity.getCc());
 		person.setFirstName(personaEntity.getNombre());

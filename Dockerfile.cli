@@ -1,0 +1,10 @@
+FROM maven:3.9.12-eclipse-temurin-21 AS build
+WORKDIR /workspace
+COPY . .
+RUN --mount=type=cache,target=/root/.m2,sharing=locked mvn -B -pl cli-input-adapter -am clean install -DskipTests
+RUN --mount=type=cache,target=/root/.m2,sharing=locked mvn -B -pl cli-input-adapter package org.springframework.boot:spring-boot-maven-plugin:2.7.18:repackage -DskipTests
+
+FROM eclipse-temurin:11-jre-jammy
+WORKDIR /app
+COPY --from=build /workspace/cli-input-adapter/target/cli-input-adapter-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
