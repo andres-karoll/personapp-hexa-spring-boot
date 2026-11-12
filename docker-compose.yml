@@ -1,0 +1,85 @@
+# Bases de datos y aplicaciones de PersonAPP.
+# Credenciales y puertos iguales a los application.properties de rest-input-adapter y cli-input-adapter.
+# Los scripts de /scripts se ejecutan solo la primera vez (volumen vacío), en orden DDL -> DML.
+# Para reinicializar: docker compose down -v && docker compose up -d
+# REST inicia por defecto; CLI se ejecuta con docker compose run --rm cli.
+
+services:
+  mariadb:
+    image: mariadb:10.11
+    container_name: personapp-mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./scripts/persona_ddl_maria.sql:/docker-entrypoint-initdb.d/1_persona_ddl_maria.sql:ro
+      - ./scripts/persona_dml_maria.sql:/docker-entrypoint-initdb.d/2_persona_dml_maria.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  mongodb:
+    image: mongo:6.0
+    container_name: personapp-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/persona_ddl_mongo.js:/docker-entrypoint-initdb.d/1_persona_ddl_mongo.js:ro
+      - ./scripts/persona_dml_mongo.js:/docker-entrypoint-initdb.d/2_persona_dml_mongo.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rest:
+    build:
+      context: .
+      dockerfile: Dockerfile.rest
+    ports:
+      - "${REST_PORT:-3000}:3000"
+    environment: &app-environment
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/persona_db
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-persona_db}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-persona_db}
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_DATA_MONGODB_DATABASE: persona_db
+      SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE: admin
+      SPRING_DATA_MONGODB_USERNAME: ${MONGO_USER:-persona_db}
+      SPRING_DATA_MONGODB_PASSWORD: ${MONGO_PASSWORD:-persona_db}
+    depends_on: &database-dependencies
+      mariadb:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/3000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  cli:
+    profiles: ["cli"]
+    build:
+      context: .
+      dockerfile: Dockerfile.cli
+    environment: *app-environment
+    depends_on: *database-dependencies
+    stdin_open: true
+    tty: true
+
+volumes:
+  mariadb_data:
+  mongodb_data:

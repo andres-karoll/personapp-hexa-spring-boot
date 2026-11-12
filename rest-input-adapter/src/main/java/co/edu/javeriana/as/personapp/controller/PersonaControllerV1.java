@@ -36,7 +36,7 @@ public class PersonaControllerV1 {
 	@ResponseBody
 	@PostMapping(path = "", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public PersonaResponse crearPersona(@RequestBody PersonaRequest request) {
-		log.info("esta en el metodo crearTarea en el controller del api");
+		log.info("Into crearPersona REST API");
 		return personaInputAdapterRest.crearPersona(request);
 	}
 }

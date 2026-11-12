@@ -26,19 +26,29 @@ public class PersonaMapperMongo {
 	private TelefonoMapperMongo telefonoMapperMongo;
 
 	public PersonaDocument fromDomainToAdapter(Person person) {
+		PersonaDocument personaDocument = fromDomainToAdapterShallow(person);
+		personaDocument.setEstudios(validateEstudios(person.getStudies()));
+		personaDocument.setTelefonos(validateTelefonos(person.getPhoneNumbers()));
+		return personaDocument;
+	}
+
+	public PersonaDocument fromDomainToAdapterShallow(Person person) {
 		PersonaDocument personaDocument = new PersonaDocument();
 		personaDocument.setId(person.getIdentification());
 		personaDocument.setNombre(person.getFirstName());
 		personaDocument.setApellido(person.getLastName());
 		personaDocument.setGenero(validateGenero(person.getGender()));
 		personaDocument.setEdad(validateEdad(person.getAge()));
-		personaDocument.setEstudios(validateEstudios(person.getStudies()));
-		personaDocument.setTelefonos(validateTelefonos(person.getPhoneNumbers()));
 		return personaDocument;
 	}
 
-	private String validateGenero(@NonNull Gender gender) {
-		return gender == Gender.FEMALE ? "F" : gender == Gender.MALE ? "M" : " ";
+	private String validateGenero(Gender gender) {
+		if (gender == Gender.FEMALE)
+			return "F";
+		if (gender == Gender.MALE)
+			return "M";
+		throw new IllegalArgumentException(
+				"Gender " + gender + " is not supported by MongoDB, only MALE (M) or FEMALE (F) are allowed");
 	}
 
 	private Integer validateEdad(Integer age) {
@@ -58,14 +68,20 @@ public class PersonaMapperMongo {
 	}
 
 	public Person fromAdapterToDomain(PersonaDocument personaDocument) {
+		Person person = fromAdapterToDomainShallow(personaDocument);
+		person.setStudies(validateStudies(personaDocument.getEstudios()));
+		person.setPhoneNumbers(validatePhones(personaDocument.getTelefonos()));
+		return person;
+	}
+
+	public Person fromAdapterToDomainShallow(PersonaDocument personaDocument) {
+        if (personaDocument == null) return new Person();
 		Person person = new Person();
 		person.setIdentification(personaDocument.getId());
 		person.setFirstName(personaDocument.getNombre());
 		person.setLastName(personaDocument.getApellido());
 		person.setGender(validateGender(personaDocument.getGenero()));
 		person.setAge(validateAge(personaDocument.getEdad()));
-		person.setStudies(validateStudies(personaDocument.getEstudios()));
-		person.setPhoneNumbers(validatePhones(personaDocument.getTelefonos()));
 		return person;
 	}
 

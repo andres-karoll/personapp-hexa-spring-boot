@@ -38,8 +38,10 @@ public class PersonUseCase implements PersonInputPort {
 	@Override
 	public Person edit(Integer identification, Person person) throws NoExistException {
 		Person oldPerson = personPersintence.findById(identification);
-		if (oldPerson != null)
+		if (oldPerson != null) {
+			person.setIdentification(identification);
 			return personPersintence.save(person);
+		}
 		throw new NoExistException(
 				"The person with id " + identification + " does not exist into db, cannot be edited");
 	}

@@ -37,10 +37,18 @@ public class PersonOutputAdapterMongo implements PersonOutputPort {
 		}		
 	}
 
+    @Autowired
+    private co.edu.javeriana.as.personapp.mongo.repository.EstudiosRepositoryMongo studies;
+    @Autowired
+    private co.edu.javeriana.as.personapp.mongo.repository.TelefonoRepositoryMongo phones;
+
 	@Override
 	public Boolean delete(Integer identification) {
 		log.debug("Into delete on Adapter MongoDB");
-		personaRepositoryMongo.deleteById(identification);
+		if (studies.existsByPersonId(identification) || phones.existsByOwnerId(identification)) {
+            throw new org.springframework.dao.DataIntegrityViolationException("Persona con relaciones asociadas");
+        }
+        personaRepositoryMongo.deleteById(identification);
 		return personaRepositoryMongo.findById(identification).isEmpty();
 	}
 
