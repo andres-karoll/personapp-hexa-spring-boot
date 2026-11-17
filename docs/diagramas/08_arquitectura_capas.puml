@@ -23,12 +23,10 @@ skinparam database {
 skinparam ArrowColor #555555
 
 actor "Operador (CLI)" as cli
-actor "Usuario (pantallas web)" as web
 actor "Cliente (REST)" as rest
 
 package "Entrada (adaptadores de entrada)" as entrada {
   component "API REST\nControllers, Mappers, DTOs" as api
-  component "Pantallas web\nThymeleaf, controladores MVC" as pweb
   component "CLI\nMenús y consola" as consola
 }
 
@@ -49,8 +47,6 @@ database "MongoDB 27017" as dbmo
 
 cli --> consola
 rest --> api
-web --> pweb
-pweb --> pin
 api --> pin
 consola --> pin
 pin <|.. uc
