@@ -1,0 +1,1088 @@
+<!doctype html><html lang='es'><head><meta charset='utf-8'><title>Laboratorio 2 - PersonAPP</title><style>@page { size: A4; margin: 2.2cm 2cm; }
+body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color:#222; }
+h1 { font-size: 20pt; color:#08427B; border-bottom: 2px solid #08427B; padding-bottom:6px; }
+h2 { font-size: 15pt; color:#08427B; margin-top: 26px; page-break-after: avoid; }
+h3 { font-size: 12pt; color:#1168BD; margin-top: 18px; page-break-after: avoid; }
+h4 { font-size: 11pt; color:#1168BD; margin-top: 14px; page-break-after: avoid; }
+table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 8px 0 14px; page-break-inside: avoid; }
+th, td { border: 1px solid #bbb; padding: 4px 6px; vertical-align: top; text-align:left; }
+th { background: #E3EEFB; }
+code { font-family: Menlo, monospace; font-size: 8.5pt; background:#F3F3F3; padding:0 2px; }
+pre { background:#F6F6F6; border:1px solid #ddd; padding:8px; font-size:8pt; white-space: pre-wrap; page-break-inside: avoid; }
+img { max-width: 100%; display:block; margin: 8px auto; page-break-inside: avoid; }
+</style></head><body><h1>Laboratorio 2 – Servicio web PersonAPP con arquitectura hexagonal (Spring Boot)</h1>
+<p><strong>Universidad:</strong> Pontificia Universidad Javeriana<br />
+<strong>Facultad:</strong> Ingeniería de Sistemas<br />
+<strong>Materia:</strong> Arquitectura de Software<br />
+<strong>Profesor:</strong> Andrés Sánchez<br />
+<strong>Integrantes:</strong> José Eduardo Valeriano Castiblanco, Jorge Andrés Fortich Ordosgoitia y María Camila Beltrán Carreño<br />
+<strong>Fecha:</strong> 15 de noviembre de 2026<br />
+<strong>Ciudad:</strong> Bogotá D.C.</p>
+<p><strong>Repositorio:</strong> https://github.com/joseval29/personapp-hexa-spring-boot<br />
+<strong>Entrega (tag v1.0.0):</strong> https://github.com/joseval29/personapp-hexa-spring-boot/tree/v1.0.0</p>
+<hr />
+<h2>1. Marco conceptual</h2>
+<p><strong>Arquitectura hexagonal (puertos y adaptadores).</strong> Alistair Cockburn propuso en 2005 separar la aplicación en un núcleo (las reglas de negocio) y en adaptadores que conectan el núcleo con el mundo exterior. Los <em>puertos</em> son las interfaces que el núcleo expone (de entrada) o necesita (de salida). Los <em>adaptadores</em> implementan esos puertos: un adaptador REST o de consola llama al núcleo, y un adaptador de MariaDB o de MongoDB es llamado por el núcleo. La ventaja es que el núcleo no depende de Spring, de HTTP ni de una base de datos concreta, y por eso se puede probar sin levantar nada de eso.</p>
+<p><strong>Clean Architecture.</strong> Robert C. Martin describe una estructura similar en capas concéntricas, con la regla de dependencia: las dependencias apuntan hacia adentro, hacia las entidades y los casos de uso. En PersonAPP, el módulo <code>domain</code> contiene las entidades, <code>application</code> los casos de uso y los puertos, y los módulos <code>*-adapter</code> contienen los detalles.</p>
+<p><strong>Patrón Repository y servicio.</strong> El repositorio abstrae el acceso a datos (en este proyecto, <code>JpaRepository</code> y <code>MongoRepository</code> quedan dentro de los adaptadores de salida). El servicio de la guía corresponde aquí a los casos de uso (<code>PersonUseCase</code>, <code>ProfessionUseCase</code>, <code>PhoneUseCase</code>, <code>StudyUseCase</code>), que implementan las reglas: no crear duplicados, no editar ni eliminar lo que no existe y no guardar referencias a personas inexistentes.</p>
+<p><strong>Spring Boot e inyección de dependencias.</strong> Spring Boot configura automáticamente la aplicación a partir de dependencias y propiedades. Las anotaciones <code>@Adapter</code>, <code>@UseCase</code>, <code>@Port</code> y <code>@Mapper</code> del módulo <code>common</code> son alias de <code>@Component</code>, de modo que Spring las registra como beans. Desde Spring Boot 4 algunas propiedades de conexión cambiaron de prefijo (por ejemplo, la conexión de MongoDB ahora se configura con <code>spring.mongodb.uri</code>).</p>
+<p><strong>Persistencia.</strong> MariaDB se accede con JPA/Hibernate mediante entidades con anotaciones (<code>@Entity</code>, <code>@EmbeddedId</code>, <code>@ManyToOne</code>). MongoDB se accede con Spring Data, usando documentos (<code>@Document</code>) y referencias (<code>@DocumentReference</code>), que se guardan como el identificador del otro documento y no como un <code>DBRef</code>.</p>
+<p><strong>REST y códigos de estado.</strong> REST modela la API como recursos (<code>/api/v1/persona/{database}/{id}</code>) manipulados con verbos HTTP. Los códigos indican el resultado: 200 (operación exitosa con cuerpo), 204 (eliminación exitosa sin cuerpo), 400 (datos inválidos), 404 (no existe), 409 (ya existe o referencia inexistente).</p>
+<p><strong>OpenAPI 3 y Swagger.</strong> springdoc-openapi 3.2.0 genera la especificación OpenAPI 3 y la interfaz Swagger UI, en <code>/swagger-ui.html</code>.</p>
+<p><strong>Interfaz de consola (CLI).</strong> Un adaptador de entrada alternativo ofrece los mismos casos de uso desde un menú interactivo, sin cambiar el núcleo. Es la demostración práctica de que la arquitectura permite agregar entradas nuevas.</p>
+<p><strong>Docker y Docker Compose.</strong> Docker empaqueta los servicios en contenedores y Compose los orquesta. En este proyecto Compose levanta MariaDB, MongoDB, un servicio de inicialización de MongoDB, la API y la CLI como perfil opcional.</p>
+<p><strong>Principios SOLID.</strong> La separación en puertos segregados (ISP), el registro de motores (DIP y OCP) y el contrato de los puertos (LSP) se aplicaron de forma explícita. Están documentados en el README del proyecto.</p>
+<p><strong>Pruebas.</strong> Se distinguen pruebas unitarias (casos de uso, mappers, controladores y menús con dependencias simuladas) y pruebas de integración (la API real contra las bases de datos en Docker).</p>
+<hr />
+<h2>2. Diseño</h2>
+<h3>2.1 Modelo de datos</h3>
+<p>El modelo entregado en el enunciado tiene cuatro entidades. En MariaDB se implementó con el DDL de <code>scripts/persona_ddl_maria.sql</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Tabla</th>
+<th>Clave primaria</th>
+<th>Campos</th>
+<th>Relaciones</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>persona</code></td>
+<td><code>cc</code> (INT 15)</td>
+<td>nombre (VARCHAR 45), apellido (VARCHAR 45), genero (ENUM 'M','F'), edad (INT 3)</td>
+<td>1:N con <code>telefono</code> y con <code>estudios</code></td>
+</tr>
+<tr>
+<td><code>profesion</code></td>
+<td><code>id</code> (INT 6)</td>
+<td>nom (VARCHAR 90), des (TEXT)</td>
+<td>1:N con <code>estudios</code></td>
+</tr>
+<tr>
+<td><code>estudios</code></td>
+<td>(<code>id_prof</code>, <code>cc_per</code>)</td>
+<td>fecha (DATE), univer (VARCHAR 50)</td>
+<td>N:M entre <code>persona</code> y <code>profesion</code></td>
+</tr>
+<tr>
+<td><code>telefono</code></td>
+<td><code>num</code> (VARCHAR 15)</td>
+<td>oper (VARCHAR 45), duenio (INT 15)</td>
+<td>N:1 con <code>persona</code> (clave foránea <code>duenio</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>En MongoDB, cada entidad es una colección (<code>persona</code>, <code>profesion</code>, <code>telefono</code>, <code>estudios</code>). Las referencias se guardan como el identificador del documento relacionado. Un estudio tiene como <code>_id</code> la combinación <code>cédula-idProfesion</code>, que replica la clave compuesta de MariaDB.</p>
+<p><strong>Decisiones sobre el modelo.</strong> El esquema usa <code>utf8mb4</code> para conservar tildes y eñes (sin esto los acentos se guardaban corruptos). La fecha de grado es <code>LocalDate</code> en la entidad JPA, porque la clase <code>java.util.Date</code> estaba deprecada y devolvía tipos sin soporte para <code>toInstant()</code>.</p>
+<h3>2.2 Arquitectura hexagonal</h3>
+<p>El diagrama muestra las capas y la regla de dependencia: los adaptadores de entrada (API REST y CLI) y de salida (MariaDB y MongoDB) dependen del núcleo, y el núcleo no depende de ninguno de ellos.</p>
+<p><img alt="Arquitectura hexagonal por capas" src="diagramas/08_arquitectura_capas.png" /></p>
+<p>Fuente: <a href="diagramas/08_arquitectura_capas.puml"><code>diagramas/08_arquitectura_capas.puml</code></a>.</p>
+<h3>2.3 Módulos y clases principales</h3>
+<table>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Responsabilidad</th>
+<th>Clases principales</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>common</code></td>
+<td>Anotaciones, excepciones, motores y validación compartida</td>
+<td><code>DatabaseOption</code>, <code>PersistenceRegistry</code>, <code>Entrada</code>, <code>AlreadyExistException</code>, <code>NoExistException</code>, <code>InvalidOptionException</code></td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td>Modelo del dominio</td>
+<td><code>Person</code>, <code>Phone</code>, <code>Profession</code>, <code>Study</code>, <code>Gender</code></td>
+</tr>
+<tr>
+<td><code>application</code></td>
+<td>Puertos y casos de uso</td>
+<td><code>PersonInputPort</code>, <code>PersonOutputPort</code>, <code>PersonUseCase</code>, <code>ProfessionUseCase</code>, <code>PhoneUseCase</code>, <code>StudyUseCase</code></td>
+</tr>
+<tr>
+<td><code>maria-output-adapter</code></td>
+<td>Adaptadores de salida con JPA</td>
+<td><code>PersonOutputAdapterMaria</code>, <code>ProfessionOutputAdapterMaria</code>, <code>PhoneOutputAdapterMaria</code>, <code>StudyOutputAdapterMaria</code>; entidades y repositorios <code>JpaRepository</code></td>
+</tr>
+<tr>
+<td><code>mongo-output-adapter</code></td>
+<td>Adaptadores de salida con Spring Data</td>
+<td><code>PersonOutputAdapterMongo</code> (con cascada), <code>ProfessionOutputAdapterMongo</code>, <code>PhoneOutputAdapterMongo</code>, <code>StudyOutputAdapterMongo</code>; documentos y repositorios <code>MongoRepository</code></td>
+</tr>
+<tr>
+<td><code>rest-input-adapter</code></td>
+<td>API REST</td>
+<td><code>PersonaControllerV1</code>, <code>ProfesionControllerV1</code>, <code>TelefonoControllerV1</code>, <code>EstudioControllerV1</code>, <code>ApiExceptionHandler</code>, <code>PersistenceConfig</code></td>
+</tr>
+<tr>
+<td><code>cli-input-adapter</code></td>
+<td>Menú de consola</td>
+<td><code>PersonaMenu</code>, <code>ProfesionMenu</code>, <code>TelefonoMenu</code>, <code>EstudioMenu</code>, <code>MenuBase</code></td>
+</tr>
+</tbody>
+</table>
+<h3>2.4 Estructura de carpetas</h3>
+<pre><code>personapp-hexa-spring-boot/        (raíz del repositorio, git)
+├── pom.xml                        padre Maven (Spring Boot 4.1.2, Java 25)
+├── Dockerfile                     build multietapa; MODULE=rest-input-adapter | cli-input-adapter
+├── docker-compose.yml             MariaDB, MongoDB, mongo-init, api y cli
+├── personapp.http                 peticiones de prueba (REST Client)
+├── docker/mongo-init.sh           carga el DDL y DML de MongoDB
+├── scripts/                       DDL y DML de MariaDB y MongoDB
+├── tests/run-integration-tests.sh levanta Docker Compose y corre las pruebas de integración
+├── docs/                          este documento y diagramas C4
+├── common/                        anotaciones, excepciones, Entrada, PersistenceRegistry
+├── domain/                        Person, Phone, Profession, Study
+├── application/                   puertos y casos de uso
+├── maria-output-adapter/          JPA: entidades, repositorios y mappers
+├── mongo-output-adapter/          Spring Data: documentos, repositorios y mappers
+├── rest-input-adapter/            API REST: controladores, adaptadores, mappers, DTOs y configuración
+└── cli-input-adapter/             menú de consola
+</code></pre>
+<h3>2.5 Endpoints REST</h3>
+<p>Todas las rutas empiezan por <code>/api/v1</code>. <code>{database}</code> puede ser <code>maria</code> o <code>mongo</code>; cualquier otro valor responde 400.</p>
+<table>
+<thead>
+<tr>
+<th>Recurso</th>
+<th>GET lista</th>
+<th>GET por id</th>
+<th>POST</th>
+<th>PUT</th>
+<th>DELETE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/persona</code></td>
+<td><code>/{database}</code> (200)</td>
+<td><code>/{database}/{cc}</code> (200 / 404)</td>
+<td><code>/</code> (200 / 400 / 409)</td>
+<td><code>/{database}/{cc}</code> (200 / 400 / 404)</td>
+<td><code>/{database}/{cc}</code> (204 / 404)</td>
+</tr>
+<tr>
+<td><code>/profesion</code></td>
+<td><code>/{database}</code> (200)</td>
+<td><code>/{database}/{id}</code> (200 / 404)</td>
+<td><code>/</code> (200 / 400 / 409)</td>
+<td><code>/{database}/{id}</code> (200 / 400 / 404)</td>
+<td><code>/{database}/{id}</code> (204 / 404)</td>
+</tr>
+<tr>
+<td><code>/telefono</code></td>
+<td><code>/{database}</code> (200)</td>
+<td><code>/{database}/{numero}</code> (200 / 404)</td>
+<td><code>/</code> (200 / 400 / 409)</td>
+<td><code>/{database}/{numero}</code> (200 / 400 / 404)</td>
+<td><code>/{database}/{numero}</code> (204 / 404)</td>
+</tr>
+<tr>
+<td><code>/estudio</code></td>
+<td><code>/{database}</code> (200)</td>
+<td><code>/{database}/{cc}/{idProf}</code> (200 / 404)</td>
+<td><code>/</code> (200 / 400 / 409)</td>
+<td><code>/{database}/{cc}/{idProf}</code> (200 / 400 / 404)</td>
+<td><code>/{database}/{cc}/{idProf}</code> (204 / 404)</td>
+</tr>
+</tbody>
+</table>
+<p>Las peticiones de ejemplo de cada endpoint están en <code>personapp.http</code>.</p>
+<h3>2.6 Decisiones de diseño</h3>
+<ul>
+<li><strong>Registro de motores en lugar de <code>if</code> por base de datos.</strong> Cada adaptador de entrada recibe un <code>PersistenceRegistry</code> con el puerto de cada motor. Agregar un motor no obliga a cambiar los adaptadores de entrada (principio abierto/cerrado y de inversión de dependencias).</li>
+<li><strong>Puertos segregados.</strong> Cada agregado tiene sus propios puertos de entrada y salida. Se eliminó de <code>PersonInputPort</code> un método de salida que no le correspondía (principio de segregación de interfaces).</li>
+<li><strong>Contrato de los puertos.</strong> Los adaptadores de salida no reportan éxito cuando una escritura falla. Antes, el adaptador de MongoDB devolvía la persona aunque no se hubiera guardado.</li>
+<li><strong>Validación de entrada compartida.</strong> <code>Entrada</code> valida los datos en la API y en la CLI con los mismos límites del esquema: DNI y ids positivos, texto con longitud máxima (45, 90, 15, 50), edad entre 0 y 150, género <code>M</code> o <code>F</code>, y fechas <code>yyyy-MM-dd</code>. Las entradas inválidas responden 400 en lugar de 409 o 500.</li>
+<li><strong>Mapeo superficial de objetos anidados.</strong> Una persona dentro de un teléfono o de un estudio se convierte solo con sus datos básicos. Mapear de forma recursiva persona ↔ estudios generaba recursión infinita en cuanto había datos.</li>
+<li><strong>Cascada en ambas bases.</strong> En MariaDB la cascada la hace JPA (<code>CascadeType.ALL</code>). En MongoDB la hacen explícitamente los adaptadores: al eliminar una persona se borran sus teléfonos y estudios, y al eliminar una profesión se borran sus estudios.</li>
+<li><strong>Validación de referencias en MongoDB.</strong> Como MongoDB no tiene claves foráneas, antes de guardar un teléfono o un estudio el adaptador comprueba que la persona (y la profesión) existan. Si no existen, responde 409.</li>
+<li><strong>Código de respuesta de creación.</strong> Los <code>POST</code> responden 200 con el cuerpo creado (no 201) para mantener un formato uniforme con los demás verbos; esta es una decisión que se puede cambiar.</li>
+<li><strong>Configuración por entorno.</strong> Las conexiones se configuran con variables de entorno (<code>SPRING_DATASOURCE_URL</code>, <code>SPRING_MONGODB_URI</code>), así que el mismo código corre en Docker y en local.</li>
+<li><strong>Inicialización de MongoDB con un servicio aparte.</strong> El servicio <code>mongo-init</code> carga el DDL y el DML después de que el servidor responde, con credenciales explícitas. La imagen oficial de MongoDB no ejecutaba los scripts con las credenciales correctas.</li>
+</ul>
+<h3>2.7 Diagramas C4</h3>
+<p>Los diagramas siguen el modelo C4 de Simon Brown, con los mismos niveles de zoom del laboratorio uno: del paisaje del sistema hasta el código. Se incluyen dos dinámicos (un POST y un borrado en cascada) y el despliegue en Docker.</p>
+<p><strong>Paisaje del sistema.</strong> Quién usa PersonAPP y qué sistemas externos intervienen (GitHub, Maven Central y Docker Hub).</p>
+<p><img alt="Paisaje de sistemas" src="diagramas/01_paisaje.png" /></p>
+<p><strong>Nivel 1, contexto.</strong> El operador de la consola, el cliente de la API y el sistema como una sola caja.</p>
+<p><img alt="Contexto" src="diagramas/02_contexto.png" /></p>
+<p><strong>Nivel 2, contenedores.</strong> La API, la CLI, MariaDB, MongoDB y el servicio <code>mongo-init</code>, dentro de Docker Compose.</p>
+<p><img alt="Contenedores" src="diagramas/03_contenedores.png" /></p>
+<p><strong>Nivel 3, componentes.</strong> Los controladores, los adaptadores de entrada, los casos de uso, los puertos y los adaptadores de salida, con la configuración de motores.</p>
+<p><img alt="Componentes" src="diagramas/04_componentes.png" /></p>
+<p><strong>Nivel 4, código.</strong> Las clases principales del flujo de <code>Persona</code>, con sus métodos y las excepciones que cada uno lanza.</p>
+<p><img alt="Código" src="diagramas/05_codigo.png" /></p>
+<p><strong>Dinámico: crear persona por la API.</strong> Recorrido de un <code>POST /api/v1/persona</code> hasta la inserción en MariaDB, con la verificación de duplicados.</p>
+<p><img alt="Crear persona por la API" src="diagramas/06a_dinamico_crear_persona_api.png" /></p>
+<p><strong>Dinámico: eliminar persona en MongoDB (borrado en cascada).</strong> Recorrido de un <code>DELETE</code> que borra primero los estudios, después los teléfonos y al final la persona.</p>
+<p><img alt="Eliminar persona en MongoDB" src="diagramas/06b_dinamico_eliminar_persona_mongo.png" /></p>
+<p><strong>Despliegue.</strong> Docker Desktop en macOS con la red de Compose, los cuatro servicios, el servicio de inicialización y los volúmenes de datos.</p>
+<p><img alt="Despliegue" src="diagramas/07_despliegue.png" /></p>
+<p>Todas las fuentes están en <code>docs/diagramas/</code> y el índice en <code>docs/diagramas/LEEME.md</code>.</p>
+<h3>2.8 Recorrido por el proyecto</h3>
+<p>Este recorrido muestra, carpeta por carpeta, la estructura del proyecto con capturas de Visual Studio Code. El proyecto sigue la arquitectura hexagonal: el dominio y la lógica de negocio están en el centro y no dependen de la tecnología. La comunicación con el exterior se hace por puertos (interfaces) que implementan los adaptadores de entrada (API REST y consola) y de salida (MariaDB y MongoDB).</p>
+<p><strong>Flujo de una petición:</strong> controlador REST → adaptador de entrada → caso de uso (puerto de entrada) → puerto de salida → adaptador de salida (MariaDB o MongoDB) → repositorio → base de datos.</p>
+<h4>2.8.1 Vista general del proyecto</h4>
+<p>La raíz contiene un proyecto Maven multimódulo. Cada módulo corresponde a una capa de la arquitectura hexagonal.
+<strong>Captura 1.</strong> Raíz del proyecto abierta en Visual Studio Code.</p>
+<p><img alt="Captura 1" src="capturas-taller2/01_vista_general_proyecto.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo / carpeta</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application</code></td>
+<td>Capa de aplicación: puertos de entrada y salida, casos de uso y sus pruebas.</td>
+</tr>
+<tr>
+<td><code>cli-input-adapter</code></td>
+<td>Adaptador de entrada por consola: menús de texto para usar la aplicación desde la terminal.</td>
+</tr>
+<tr>
+<td><code>common</code></td>
+<td>Código compartido: anotaciones propias, excepciones, configuración de persistencia y validación de entrada (<code>validation/Entrada.java</code>).</td>
+</tr>
+<tr>
+<td><code>docker</code></td>
+<td>Script auxiliar <code>mongo-init.sh</code> que carga el esquema y los datos de MongoDB al levantar los contenedores.</td>
+</tr>
+<tr>
+<td><code>domain</code></td>
+<td>Núcleo del sistema: las entidades del negocio (Persona, Profesión, Teléfono, Estudio).</td>
+</tr>
+<tr>
+<td><code>maria-output-adapter</code></td>
+<td>Adaptador de salida que guarda y consulta los datos en MariaDB (SQL).</td>
+</tr>
+<tr>
+<td><code>mongo-output-adapter</code></td>
+<td>Adaptador de salida que guarda y consulta los datos en MongoDB (NoSQL).</td>
+</tr>
+<tr>
+<td><code>rest-input-adapter</code></td>
+<td>Adaptador de entrada que expone la API REST (controladores HTTP).</td>
+</tr>
+<tr>
+<td><code>scripts</code></td>
+<td>Scripts DDL y DML de MariaDB y MongoDB con datos de ejemplo.</td>
+</tr>
+<tr>
+<td><code>tests</code></td>
+<td>Script <code>run-integration-tests.sh</code>: levanta Docker Compose, espera a la API y ejecuta las pruebas de integración.</td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td>Documento del laboratorio, diagramas C4 y este recorrido.</td>
+</tr>
+<tr>
+<td><code>pom.xml</code></td>
+<td>Archivo Maven padre que declara los módulos, las versiones y las dependencias comunes.</td>
+</tr>
+<tr>
+<td><code>Dockerfile</code> / <code>docker-compose.yml</code></td>
+<td>Construcción de la imagen de la aplicación y orquestación de los contenedores.</td>
+</tr>
+<tr>
+<td><code>personapp.http</code></td>
+<td>Peticiones de prueba de la API (REST Client).</td>
+</tr>
+<tr>
+<td><code>.dockerignore</code>, <code>.gitignore</code>, <code>LICENSE</code>, <code>README.md</code></td>
+<td>Archivos que Docker y Git ignoran, licencia Apache 2.0 y documentación general.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.2 <code>pom.xml</code> de la raíz</h4>
+<p>Es el POM padre del proyecto. Hereda de <code>spring-boot-starter-parent</code> (Spring Boot 4.1.2), usa empaquetado <code>pom</code> porque solo agrupa módulos, y define propiedades comunes: Java 25, Lombok 1.18.48, springdoc 3.2.0 y el conector de MariaDB.
+<strong>Captura 2.</strong> Inicio del <code>pom.xml</code>: proyecto padre y propiedades.</p>
+<p><img alt="Captura 2" src="capturas-taller2/02_pom_raiz_inicio.png" />
+<strong>Captura 3.</strong> Sección <code>&lt;modules&gt;</code> del <code>pom.xml</code>.</p>
+<p><img alt="Captura 3" src="capturas-taller2/03_pom_raiz_modulos.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Sección</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;parent&gt;</code></td>
+<td>Hereda la configuración base de Spring Boot.</td>
+</tr>
+<tr>
+<td><code>&lt;properties&gt;</code></td>
+<td>Versiones centralizadas (Java, Lombok, springdoc, MariaDB) para que todos los módulos usen las mismas.</td>
+</tr>
+<tr>
+<td><code>&lt;modules&gt;</code></td>
+<td>Lista los 7 módulos en orden de construcción: common, domain, application, maria-output-adapter, mongo-output-adapter, rest-input-adapter y cli-input-adapter.</td>
+</tr>
+<tr>
+<td><code>&lt;dependencies&gt;</code></td>
+<td>Dependencias que heredan todos los módulos: slf4j (logs) y Lombok (genera getters, setters y constructores).</td>
+</tr>
+<tr>
+<td><code>&lt;build&gt;</code></td>
+<td>Configura el compilador de Maven para que procese las anotaciones de Lombok.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.3 Módulo <code>domain</code></h4>
+<p>Es el centro de la arquitectura. Contiene las clases del modelo de negocio y no depende de ninguna base de datos ni de ningún framework web, solo de Lombok.
+<strong>Captura 4.</strong> Carpeta <code>domain</code> con <code>Profession.java</code> abierto.</p>
+<p><img alt="Captura 4" src="capturas-taller2/04_domain_modelo.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Person.java</code></td>
+<td>Persona: identificación, nombre, apellido, género, edad, y sus teléfonos y estudios.</td>
+</tr>
+<tr>
+<td><code>Profession.java</code></td>
+<td>Profesión: identificación, nombre, descripción y los estudios asociados.</td>
+</tr>
+<tr>
+<td><code>Phone.java</code></td>
+<td>Teléfono: número, operador y la persona dueña.</td>
+</tr>
+<tr>
+<td><code>Study.java</code></td>
+<td>Relación entre una persona y una profesión: fecha de graduación y universidad.</td>
+</tr>
+<tr>
+<td><code>Gender.java</code></td>
+<td>Enumeración del género: <code>MALE</code>, <code>FEMALE</code> y <code>OTHER</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.4 Módulo <code>application</code>: puertos de entrada (<code>port/in</code>)</h4>
+<p>Los puertos de entrada son interfaces que definen qué operaciones ofrece la aplicación al exterior. Los adaptadores de entrada solo conocen estas interfaces. Están marcados con la anotación propia <code>@Port</code>.
+<strong>Captura 5.</strong> Carpeta <code>port/in</code> con <code>PersonInputPort.java</code> abierto.</p>
+<p><img alt="Captura 5" src="capturas-taller2/05_application_port_in.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PersonInputPort.java</code></td>
+<td>Operaciones sobre personas: <code>create</code>, <code>edit</code>, <code>drop</code>, <code>findAll</code>, <code>findOne</code>, <code>count</code>, <code>getPhones</code> y <code>getStudies</code>.</td>
+</tr>
+<tr>
+<td><code>ProfessionInputPort.java</code></td>
+<td>Operaciones CRUD sobre profesiones.</td>
+</tr>
+<tr>
+<td><code>PhoneInputPort.java</code></td>
+<td>Operaciones CRUD sobre teléfonos.</td>
+</tr>
+<tr>
+<td><code>StudyInputPort.java</code></td>
+<td>Operaciones CRUD sobre estudios.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.5 Módulo <code>application</code>: puertos de salida (<code>port/out</code>)</h4>
+<p>Los puertos de salida indican qué necesita la aplicación de la persistencia, sin decir cómo se hace. Los adaptadores de MariaDB y MongoDB los implementan, por eso la base de datos se puede cambiar sin tocar la lógica de negocio.
+<strong>Captura 6.</strong> Carpeta <code>port/out</code> con <code>PersonOutputPort.java</code> abierto.</p>
+<p><img alt="Captura 6" src="capturas-taller2/06_application_port_out.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PersonOutputPort.java</code></td>
+<td>Define <code>save</code>, <code>delete</code>, <code>find</code> y <code>findById</code> para personas.</td>
+</tr>
+<tr>
+<td><code>ProfessionOutputPort.java</code></td>
+<td>Operaciones de persistencia para profesiones.</td>
+</tr>
+<tr>
+<td><code>PhoneOutputPort.java</code></td>
+<td>Operaciones de persistencia para teléfonos.</td>
+</tr>
+<tr>
+<td><code>StudyOutputPort.java</code></td>
+<td>Operaciones de persistencia para estudios.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.6 Módulo <code>application</code>: casos de uso (<code>usecase</code>)</h4>
+<p>Equivale a la capa de servicios de otras arquitecturas. Aquí está la lógica de negocio: cada caso de uso implementa su puerto de entrada y recibe por constructor un puerto de salida. Por ejemplo, <code>PersonUseCase</code> valida que la persona no exista antes de crearla y lanza <code>AlreadyExistException</code> si ya existe.
+<strong>Captura 7.</strong> Carpeta <code>usecase</code> con <code>PersonUseCase.java</code> abierto.</p>
+<p><img alt="Captura 7" src="capturas-taller2/07_application_usecase.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PersonUseCase.java</code></td>
+<td>Implementa <code>PersonInputPort</code>: crear, editar, eliminar, listar, buscar y contar personas, y consultar sus teléfonos y estudios.</td>
+</tr>
+<tr>
+<td><code>ProfessionUseCase.java</code></td>
+<td>Implementa <code>ProfessionInputPort</code> con las reglas para profesiones.</td>
+</tr>
+<tr>
+<td><code>PhoneUseCase.java</code></td>
+<td>Implementa <code>PhoneInputPort</code> con las reglas para teléfonos.</td>
+</tr>
+<tr>
+<td><code>StudyUseCase.java</code></td>
+<td>Implementa <code>StudyInputPort</code> con las reglas para estudios.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.7 Módulo <code>application</code>: pruebas</h4>
+<p>Contiene las pruebas unitarias de los casos de uso. Como dependen de interfaces (puertos), se prueban sin una base de datos real, con objetos simulados (Mockito).
+<strong>Captura 8.</strong> Carpeta <code>src/test</code> con las pruebas de los casos de uso.</p>
+<p><img alt="Captura 8" src="capturas-taller2/08_application_test.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PersonUseCaseTest.java</code></td>
+<td>Pruebas de <code>PersonUseCase</code>.</td>
+</tr>
+<tr>
+<td><code>ProfessionUseCaseTest.java</code></td>
+<td>Pruebas de <code>ProfessionUseCase</code>.</td>
+</tr>
+<tr>
+<td><code>PhoneUseCaseTest.java</code></td>
+<td>Pruebas de <code>PhoneUseCase</code>.</td>
+</tr>
+<tr>
+<td><code>StudyUseCaseTest.java</code></td>
+<td>Pruebas de <code>StudyUseCase</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.8 Módulo <code>common</code></h4>
+<p>Código transversal que usan todos los módulos. Las anotaciones propias son alias de <code>@Component</code> de Spring, así las demás capas no dependen directamente del framework.
+<strong>Captura 9.</strong> Carpetas <code>annotations</code>, <code>exceptions</code> y <code>setup</code>, con <code>UseCase.java</code> abierto.</p>
+<p><img alt="Captura 9" src="capturas-taller2/09_common.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo / carpeta</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>annotations/Adapter.java</code>, <code>Mapper.java</code>, <code>Port.java</code>, <code>UseCase.java</code></td>
+<td>Marcan los adaptadores, los mapeadores, los puertos y los casos de uso.</td>
+</tr>
+<tr>
+<td><code>exceptions/AlreadyExistException.java</code></td>
+<td>Se lanza al crear un registro que ya existe.</td>
+</tr>
+<tr>
+<td><code>exceptions/NoExistException.java</code></td>
+<td>Se lanza al buscar, editar o borrar un registro que no existe.</td>
+</tr>
+<tr>
+<td><code>exceptions/InvalidOptionException.java</code></td>
+<td>Se lanza cuando la base de datos elegida no es válida.</td>
+</tr>
+<tr>
+<td><code>setup/DatabaseOption.java</code></td>
+<td>Enumeración de los motores disponibles: <code>MARIA</code> y <code>MONGO</code>.</td>
+</tr>
+<tr>
+<td><code>setup/PersistenceRegistry.java</code></td>
+<td>Asocia cada motor con su puerto de salida para elegir la base de datos en tiempo de ejecución.</td>
+</tr>
+<tr>
+<td><code>validation/Entrada.java</code></td>
+<td>Validaciones de entrada compartidas por la API y la CLI: DNI positivo, longitudes máximas, edad entre 0 y 150, género <code>M</code> o <code>F</code>, y fechas <code>yyyy-MM-dd</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.9 <code>rest-input-adapter</code>: controladores (<code>controller</code>)</h4>
+<p>Es la puerta de entrada HTTP. Cada controlador expone endpoints REST y delega en su adaptador de entrada. <code>PersonaControllerV1</code> atiende <code>/api/v1/persona</code> con <code>GET /{database}</code>, <code>GET /{database}/{id}</code>, <code>POST</code>, <code>PUT /{database}/{id}</code> y <code>DELETE /{database}/{id}</code>; el parámetro <code>database</code> indica si se usa MariaDB o MongoDB.
+<strong>Captura 10.</strong> Carpeta <code>controller</code> con <code>PersonaControllerV1.java</code> abierto.</p>
+<p><img alt="Captura 10" src="capturas-taller2/10_rest_controller.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PersonaControllerV1.java</code></td>
+<td>Endpoints REST de personas.</td>
+</tr>
+<tr>
+<td><code>ProfesionControllerV1.java</code></td>
+<td>Endpoints REST de profesiones.</td>
+</tr>
+<tr>
+<td><code>TelefonoControllerV1.java</code></td>
+<td>Endpoints REST de teléfonos.</td>
+</tr>
+<tr>
+<td><code>EstudioControllerV1.java</code></td>
+<td>Endpoints REST de estudios.</td>
+</tr>
+<tr>
+<td><code>ApiExceptionHandler.java</code></td>
+<td>Convierte las excepciones (<code>NoExistException</code>, <code>AlreadyExistException</code>, <code>InvalidOptionException</code> y entradas inválidas) en respuestas HTTP 404, 409 o 400.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.10 <code>rest-input-adapter</code>: adaptadores y mapeadores</h4>
+<p>El adaptador conecta el mundo REST con el núcleo: recibe la petición, usa el <code>PersistenceRegistry</code> para obtener el puerto de salida de la base elegida, crea el caso de uso y transforma el resultado en una respuesta. Los mapeadores convierten entre objetos REST y objetos de dominio, y validan con <code>Entrada</code> antes de construir el dominio.
+<strong>Captura 11.</strong> Carpetas <code>adapter</code> y <code>mapper</code>, con <code>PersonaInputAdapterRest.java</code> abierto.</p>
+<p><img alt="Captura 11" src="capturas-taller2/11_rest_adapter_mapper.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>adapter/PersonaInputAdapterRest.java</code></td>
+<td>Orquesta las operaciones de personas desde la API.</td>
+</tr>
+<tr>
+<td><code>adapter/ProfesionInputAdapterRest.java</code></td>
+<td>Lo mismo para profesiones.</td>
+</tr>
+<tr>
+<td><code>adapter/TelefonoInputAdapterRest.java</code></td>
+<td>Lo mismo para teléfonos.</td>
+</tr>
+<tr>
+<td><code>adapter/EstudioInputAdapterRest.java</code></td>
+<td>Lo mismo para estudios.</td>
+</tr>
+<tr>
+<td><code>mapper/*MapperRest.java</code></td>
+<td>Convierten <code>Request</code> a dominio y dominio a <code>Response</code>, una clase por entidad.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.11 <code>rest-input-adapter</code>: modelos (<code>model</code>)</h4>
+<p>Son los objetos que viajan en JSON por la API. Se separan del dominio para que cambiar la forma de la API no afecte al núcleo.
+<strong>Captura 12.</strong> Carpetas <code>request</code> y <code>response</code>, con <code>PersonaRequest.java</code> abierto.</p>
+<p><img alt="Captura 12" src="capturas-taller2/12_rest_model_request_response.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>request/PersonaRequest.java</code></td>
+<td>Datos para crear o editar una persona: <code>dni</code>, <code>firstName</code>, <code>lastName</code>, <code>age</code>, <code>sex</code> y <code>database</code>.</td>
+</tr>
+<tr>
+<td><code>request/ProfesionRequest</code>, <code>TelefonoRequest</code>, <code>EstudioRequest</code></td>
+<td>Datos de entrada para las otras entidades.</td>
+</tr>
+<tr>
+<td><code>response/PersonaResponse</code>, <code>ProfesionResponse</code>, <code>TelefonoResponse</code>, <code>EstudioResponse</code></td>
+<td>Datos que la API devuelve para cada entidad.</td>
+</tr>
+<tr>
+<td><code>response/Response.java</code></td>
+<td>Respuesta genérica con estado, descripción y fecha, usada para los errores.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.12 <code>rest-input-adapter</code>: configuración y arranque</h4>
+<p><strong>Captura 13.</strong> <code>PersistenceConfig.java</code>.</p>
+<p><img alt="Captura 13" src="capturas-taller2/13_rest_config.png" />
+<strong>Captura 14.</strong> <code>application.properties</code>.</p>
+<p><img alt="Captura 14" src="capturas-taller2/14_rest_application_properties.png" />
+<strong>Captura 15.</strong> <code>PersonAppRestApi.java</code>.</p>
+<p><img alt="Captura 15" src="capturas-taller2/15_rest_clase_principal.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config/PersistenceConfig.java</code></td>
+<td>Crea un <code>PersistenceRegistry</code> por cada entidad y registra en él el adaptador de MariaDB y el de MongoDB.</td>
+</tr>
+<tr>
+<td><code>resources/application.properties</code></td>
+<td>Logs, puerto 3000, documentación OpenAPI en <code>/api-docs</code> (Swagger UI en <code>/swagger-ui.html</code>), y conexiones a MariaDB (3307) y MongoDB (27017).</td>
+</tr>
+<tr>
+<td><code>PersonAppRestApi.java</code></td>
+<td>Clase principal con <code>@SpringBootApplication</code> y <code>main</code>, que inicia la API.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.13 Módulo <code>cli-input-adapter</code></h4>
+<p>Es un segundo adaptador de entrada que usa los mismos casos de uso que la API REST, pero desde un menú en la consola. Demuestra que el núcleo no depende de la forma de entrada.
+<strong>Captura 16.</strong> Estructura del módulo, con <code>PersonAppCli.java</code> abierto.</p>
+<p><img alt="Captura 16" src="capturas-taller2/16_cli_estructura_clase_principal.png" />
+<strong>Captura 17.</strong> Carpetas <code>adapter</code> y <code>menu</code>, con <code>MenuPrincipal.java</code> abierto.</p>
+<p><img alt="Captura 17" src="capturas-taller2/17_cli_adapter_menu.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo / carpeta</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PersonAppCli.java</code></td>
+<td>Clase principal; implementa <code>CommandLineRunner</code> y al arrancar abre el menú principal.</td>
+</tr>
+<tr>
+<td><code>terminal/adapter/*InputAdapterCli.java</code></td>
+<td>Adaptadores de Persona, Profesión, Teléfono y Estudio que llaman a los casos de uso y muestran resultados.</td>
+</tr>
+<tr>
+<td><code>terminal/config/PersistenceConfig.java</code></td>
+<td>Registra los adaptadores de MariaDB y MongoDB, igual que en el módulo REST.</td>
+</tr>
+<tr>
+<td><code>terminal/mapper/PersonaMapperCli.java</code></td>
+<td>Convierte objetos de dominio al modelo de consola.</td>
+</tr>
+<tr>
+<td><code>terminal/menu/MenuPrincipal.java</code></td>
+<td>Menú inicial para elegir el módulo: persona, profesión, teléfono o estudio.</td>
+</tr>
+<tr>
+<td><code>terminal/menu/MenuBase.java</code></td>
+<td>Clase base con la lógica común de todos los menús (elegir motor y operaciones CRUD).</td>
+</tr>
+<tr>
+<td><code>terminal/menu/PersonaMenu</code>, <code>ProfesionMenu</code>, <code>TelefonoMenu</code>, <code>EstudioMenu</code></td>
+<td>Submenús con las opciones de cada entidad.</td>
+</tr>
+<tr>
+<td><code>terminal/model/PersonaModelCli.java</code></td>
+<td>Representación de una persona para mostrarla en consola.</td>
+</tr>
+<tr>
+<td><code>terminal/util/Consola.java</code></td>
+<td>Utilidades para leer datos del teclado (<code>leerEntero</code>, <code>leerTexto</code>, <code>leerOpcional</code>).</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.14 Módulo <code>maria-output-adapter</code></h4>
+<p>Adaptador de salida para la base relacional MariaDB, con JPA (Jakarta Persistence) y Spring Data.
+<strong>Captura 18.</strong> Carpetas <code>adapter</code>, <code>entity</code> y <code>mapper</code>, con <code>PersonaEntity.java</code> abierto.</p>
+<p><img alt="Captura 18" src="capturas-taller2/18_maria_output_adapter.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo / carpeta</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>adapter/*OutputAdapterMaria.java</code></td>
+<td>Implementan los puertos de salida (por ejemplo, <code>PersonOutputAdapterMaria</code> implementa <code>PersonOutputPort</code>) y se registran con un nombre como <code>personOutputAdapterMaria</code>.</td>
+</tr>
+<tr>
+<td><code>entity/PersonaEntity</code>, <code>ProfesionEntity</code>, <code>TelefonoEntity</code>, <code>EstudiosEntity</code></td>
+<td>Clases JPA mapeadas a las tablas <code>persona</code>, <code>profesion</code>, <code>telefono</code> y <code>estudios</code>.</td>
+</tr>
+<tr>
+<td><code>entity/EstudiosEntityPK.java</code></td>
+<td>Llave primaria compuesta de la tabla <code>estudios</code> (persona + profesión).</td>
+</tr>
+<tr>
+<td><code>mapper/*MapperMaria.java</code></td>
+<td>Convierten entre entidades JPA y objetos de dominio.</td>
+</tr>
+<tr>
+<td><code>repository/*RepositoryMaria.java</code></td>
+<td>Interfaces que extienden <code>JpaRepository</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.15 Módulo <code>mongo-output-adapter</code></h4>
+<p>Adaptador de salida para la base NoSQL MongoDB. Tiene la misma estructura que el de MariaDB, lo que muestra cómo dos tecnologías distintas cumplen el mismo puerto.
+<strong>Captura 19.</strong> Carpetas <code>adapter</code>, <code>document</code>, <code>mapper</code> y <code>repository</code>, con <code>PersonaDocument.java</code> abierto.</p>
+<p><img alt="Captura 19" src="capturas-taller2/19_mongo_output_adapter.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo / carpeta</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>adapter/*OutputAdapterMongo.java</code></td>
+<td>Implementan los puertos de salida usando MongoDB.</td>
+</tr>
+<tr>
+<td><code>document/PersonaDocument</code>, <code>ProfesionDocument</code>, <code>TelefonoDocument</code>, <code>EstudiosDocument</code></td>
+<td>Clases mapeadas a colecciones de MongoDB con <code>@Document</code>.</td>
+</tr>
+<tr>
+<td><code>mapper/*MapperMongo.java</code></td>
+<td>Convierten entre documentos de Mongo y objetos de dominio.</td>
+</tr>
+<tr>
+<td><code>repository/*RepositoryMongo.java</code></td>
+<td>Interfaces que extienden <code>MongoRepository</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.16 Carpeta <code>scripts</code> y <code>tests</code></h4>
+<p>Scripts para preparar las bases de datos. DDL significa definición de la estructura y DML, manipulación de datos.
+<strong>Captura 20.</strong> Carpeta <code>scripts</code>, con <code>persona_ddl_maria.sql</code> abierto.</p>
+<p><img alt="Captura 20" src="capturas-taller2/20_scripts.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/persona_ddl_maria.sql</code></td>
+<td>Crea el usuario <code>persona_db</code>, el esquema y las tablas <code>persona</code>, <code>profesion</code>, <code>telefono</code> y <code>estudios</code> con sus llaves.</td>
+</tr>
+<tr>
+<td><code>scripts/persona_dml_maria.sql</code></td>
+<td>Inserta datos de ejemplo en MariaDB.</td>
+</tr>
+<tr>
+<td><code>scripts/persona_ddl_mongo.js</code></td>
+<td>Crea el usuario de la base <code>persona_db</code> en MongoDB.</td>
+</tr>
+<tr>
+<td><code>scripts/persona_dml_mongo.js</code></td>
+<td>Inserta datos de ejemplo en MongoDB.</td>
+</tr>
+<tr>
+<td><code>tests/run-integration-tests.sh</code></td>
+<td>Levanta los contenedores, espera a que la API responda y ejecuta las pruebas de integración. Está fuera de <code>scripts/</code> porque MariaDB ejecuta todos los <code>.sh</code> de esa carpeta al inicializarse.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.17 <code>docker-compose.yml</code></h4>
+<p>Orquesta todos los contenedores para levantar el sistema completo con un solo comando (<code>docker compose up -d --build</code>).
+<strong>Captura 21.</strong> <code>docker-compose.yml</code>.</p>
+<p><img alt="Captura 21" src="capturas-taller2/21_docker_compose.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Servicio</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mariadb</code></td>
+<td>Contenedor de MariaDB en el puerto 3307; carga automáticamente los scripts SQL.</td>
+</tr>
+<tr>
+<td><code>mongodb</code></td>
+<td>Contenedor de MongoDB en el puerto 27017.</td>
+</tr>
+<tr>
+<td><code>mongo-init</code></td>
+<td>Ejecuta <code>docker/mongo-init.sh</code> una vez para cargar los datos de MongoDB y termina.</td>
+</tr>
+<tr>
+<td><code>api</code></td>
+<td>Construye y ejecuta <code>rest-input-adapter</code> en el puerto 3000, cuando las bases ya están listas.</td>
+</tr>
+<tr>
+<td><code>cli</code></td>
+<td>Construye <code>cli-input-adapter</code>; se usa con <code>docker compose run --rm cli</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.18 Dockerfile</h4>
+<p>Construye la imagen de la aplicación en dos etapas (multi-stage build).
+<strong>Captura 22.</strong> <code>Dockerfile</code>.</p>
+<p><img alt="Captura 22" src="capturas-taller2/22_dockerfile.png" /></p>
+<table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>Para qué sirve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Etapa <code>build</code></td>
+<td>Usa Maven con Java 25 para compilar todos los módulos y ejecutar las pruebas (<code>mvn clean package</code>).</td>
+</tr>
+<tr>
+<td>Etapa de ejecución</td>
+<td>Usa solo el JRE 25 y copia el <code>.jar</code> del módulo indicado en <code>ARG MODULE</code>.</td>
+</tr>
+<tr>
+<td><code>USER</code>, <code>EXPOSE</code>, <code>ENTRYPOINT</code></td>
+<td>Ejecuta con un usuario sin privilegios, expone el puerto 3000 y arranca con <code>java -jar</code>.</td>
+</tr>
+</tbody>
+</table>
+<h4>2.8.19 Conclusión del recorrido</h4>
+<p>El proyecto separa claramente las responsabilidades. El módulo <code>domain</code> y los casos de uso de <code>application</code> no conocen la API REST ni las bases de datos; solo se comunican mediante puertos. Gracias a esto existen dos adaptadores de entrada (REST y consola) y dos de salida (MariaDB y MongoDB) que usan la misma lógica de negocio, y se puede elegir la base de datos en cada petición mediante el <code>PersistenceRegistry</code>. Docker Compose permite levantar todo el sistema con un solo comando.</p>
+<hr />
+<h2>3. Procedimiento</h2>
+<p>Trabajamos en macOS con chip Apple Silicon. Se usó Docker Desktop para las bases de datos y para la ejecución del proyecto, de modo que el único requisito local es Docker. Para compilar sin Docker se usó Maven con JDK 25.</p>
+<h3>3.1 Ambiente</h3>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Versión</th>
+<th>Uso</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>macOS</td>
+<td>arm64 (Apple Silicon)</td>
+<td>Sistema de desarrollo</td>
+</tr>
+<tr>
+<td>Docker Desktop / Compose</td>
+<td>29.2.0 / v5.0.2</td>
+<td>Contenedores</td>
+</tr>
+<tr>
+<td>JDK</td>
+<td>25 (Temurin en la imagen; OpenJDK 25 en local)</td>
+<td>Compilación y ejecución</td>
+</tr>
+<tr>
+<td>Maven</td>
+<td>3.9+</td>
+<td>Construcción de los módulos</td>
+</tr>
+<tr>
+<td>Spring Boot</td>
+<td>4.1.2</td>
+<td>Framework de la aplicación</td>
+</tr>
+<tr>
+<td>Lombok</td>
+<td>1.18.48</td>
+<td>Reducción de código repetido</td>
+</tr>
+<tr>
+<td>springdoc-openapi</td>
+<td>3.2.0</td>
+<td>Swagger UI y OpenAPI 3</td>
+</tr>
+<tr>
+<td>MariaDB Connector/J</td>
+<td>4.0.0</td>
+<td>Controlador JDBC</td>
+</tr>
+<tr>
+<td>MariaDB</td>
+<td>latest (probado con 13.0.2)</td>
+<td>Base relacional</td>
+</tr>
+<tr>
+<td>MongoDB</td>
+<td>latest (probado con 9.0.4)</td>
+<td>Base documental</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Paso 1. Revisión de la plantilla.</strong> Se hizo un fork del repositorio plantilla de la materia y se revisó su código. Con JDK 11 compilaba; con JDK 21 fallaba porque Lombok 1.18.26 no es compatible con ese compilador.</p>
+<p><strong>Paso 2. Migración.</strong> Se migró a JDK 25 y Spring Boot 4.1.2 porque se pidió usar las versiones más recientes. Esto implicó cambiar <code>javax.persistence</code> por <code>jakarta.persistence</code>, reemplazar <code>spring-boot-starter-web</code> por <code>spring-boot-starter-webmvc</code> y actualizar springdoc.</p>
+<p><strong>Paso 3. Ejecución del original.</strong> Para comparar, se ejecutó la plantilla sin cambios en una copia aparte. No arranca como jar ejecutable porque el <code>pom</code> no hereda el padre de Spring Boot, y su DML de MongoDB inserta en la base <code>prueba_db</code> en lugar de <code>persona_db</code>. Su endpoint POST responde 500 y no existen los endpoints de consulta por id, edición ni eliminación.</p>
+<h3>3.2 Bases de datos</h3>
+<p><strong>Paso 4. Levantar el stack.</strong> <code>docker compose up -d --build</code> levanta MariaDB (puerto 3307), MongoDB (puerto 27017), el servicio <code>mongo-init</code>, la API (puerto 3000) y la CLI como perfil opcional.</p>
+<p><strong>Paso 5. Carga de datos.</strong> MariaDB ejecuta al crearse <code>persona_ddl_maria.sql</code> y <code>persona_dml_maria.sql</code>. MongoDB los ejecuta el servicio <code>mongo-init</code>, que crea el usuario y carga los datos después de que el servidor responde.</p>
+<p><strong>Paso 6. Verificación.</strong> Tras levantar el stack desde cero: 5 personas, 3 profesiones, 4 teléfonos y 4 estudios en cada base, y cero errores en el log de la API.</p>
+<h3>3.3 Implementación</h3>
+<p><strong>Paso 7. CRUD REST y CLI.</strong> Se implementaron los puertos, los casos de uso, los adaptadores de salida para MariaDB y MongoDB, los controladores, los adaptadores de entrada, los mappers y los menús de consola para los cuatro módulos.</p>
+<p><strong>Paso 8. Corrección de defectos.</strong> Durante las pruebas se encontraron y corrigieron los siguientes defectos:</p>
+<table>
+<thead>
+<tr>
+<th>Defecto</th>
+<th>Causa</th>
+<th>Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Listado de personas con 500</td>
+<td>Hibernate devolvía <code>java.sql.Date</code> y <code>toInstant()</code> no está soportado</td>
+<td>Fecha de grado como <code>LocalDate</code></td>
+</tr>
+<tr>
+<td>Un POST con id existente sobrescribía el registro</td>
+<td><code>save()</code> hace merge</td>
+<td>Verificación de existencia y respuesta 409</td>
+</tr>
+<tr>
+<td>Acentos corruptos (<code>DiseÃ±a</code>)</td>
+<td>El esquema no definía <code>utf8mb4</code></td>
+<td><code>utf8mb4</code> en esquema y tablas</td>
+</tr>
+<tr>
+<td>MongoDB sin autenticación</td>
+<td>Spring Boot 4 ignoraba las propiedades de usuario</td>
+<td>URI con <code>authSource=admin</code></td>
+</tr>
+<tr>
+<td>Referencias lazy de MongoDB con id nulo</td>
+<td>Las referencias perezosas no resolvían el id</td>
+<td>Carga eager de las referencias</td>
+</tr>
+<tr>
+<td>Teléfono o estudio con dueño inexistente producía 500</td>
+<td>Error de referencia no traducido</td>
+<td>Validación y respuesta 409</td>
+</tr>
+<tr>
+<td>Género <code>X</code> daba 409 con mensaje engañoso</td>
+<td>MariaDB solo admite <code>M</code> y <code>F</code></td>
+<td>Validación con respuesta 400</td>
+</tr>
+<tr>
+<td>Fecha mal formada producía 500</td>
+<td><code>DateTimeParseException</code> no estaba en el manejador</td>
+<td>Manejo en 400</td>
+</tr>
+<tr>
+<td>El runner de pruebas hacía fallar MariaDB</td>
+<td>Un <code>.sh</code> dentro de <code>scripts/</code> se ejecuta al inicializar la base</td>
+<td>Runner movido a <code>tests/</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Paso 9. Revisión de SOLID.</strong> Se refactorizó el registro de motores, se segregó el puerto de entrada y se corrigió el contrato de Mongo. El detalle está en la sección 2.6.</p>
+<h3>3.4 Compilación y ejecución</h3>
+<p><strong>Paso 10. Compilación.</strong> <code>mvn clean install</code> compila los siete módulos y ejecuta las pruebas unitarias.</p>
+<p><strong>Paso 11. Ejecución con Docker.</strong> <code>docker compose up -d --build</code> levanta el stack completo. La API responde en <code>http://localhost:3000/api-docs</code> y Swagger en <code>http://localhost:3000/swagger-ui.html</code>.</p>
+<p><strong>Paso 12. Ejecución de la CLI.</strong> <code>docker compose run --rm cli</code> abre el menú interactivo.</p>
+<h3>3.5 Pruebas</h3>
+<p><strong>Paso 13. Pruebas unitarias.</strong> <code>mvn clean verify</code> ejecuta 67 pruebas, todas en verde:</p>
+<table>
+<thead>
+<tr>
+<th>Módulo</th>
+<th>Pruebas</th>
+<th>Qué cubren</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>common</code></td>
+<td>10</td>
+<td>Registro de motores, <code>DatabaseOption</code> y validación <code>Entrada</code></td>
+</tr>
+<tr>
+<td><code>application</code></td>
+<td>17</td>
+<td>Casos de uso de persona, profesión, teléfono y estudio, con puertos simulados</td>
+</tr>
+<tr>
+<td><code>maria-output-adapter</code></td>
+<td>5</td>
+<td>Mappers de MariaDB: ida y vuelta, lectura superficial y clave compuesta</td>
+</tr>
+<tr>
+<td><code>mongo-output-adapter</code></td>
+<td>5</td>
+<td>Mappers de MongoDB: referencias por id y fechas</td>
+</tr>
+<tr>
+<td><code>rest-input-adapter</code></td>
+<td>22</td>
+<td>Mappers REST y contratos HTTP de los controladores (200, 204, 400, 404, 409)</td>
+</tr>
+<tr>
+<td><code>cli-input-adapter</code></td>
+<td>8</td>
+<td>Flujos de los menús con entrada simulada</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Paso 14. Pruebas de integración.</strong> <code>tests/run-integration-tests.sh</code> levanta el stack, espera a que la API responda y ejecuta 19 pruebas contra la API real, en MariaDB y en MongoDB. Cubren el CRUD completo de los cuatro módulos, los duplicados (409), las entradas inválidas (400), la base inválida (400), las referencias inexistentes (409) y las cascadas en ambas bases. Resultado: 19 de 19 en verde.</p>
+<p><strong>Paso 15. Pruebas manuales.</strong> Se probaron a mano casos límite con <code>curl</code> (DNI negativo, texto demasiado largo, fechas mal formadas, teléfono vacío y campos faltantes) y se corrigieron los defectos que aparecieron. Las peticiones de todos los endpoints están en <code>personapp.http</code>, y las 24 se verificaron contra la API con los códigos esperados.</p>
+<p><strong>Paso 16. Pruebas de la CLI.</strong> Se ejecutó la CLI en Docker con guiones de entrada completos en ambas bases: crear, buscar, editar, eliminar, duplicados, referencias inexistentes y opciones inválidas.</p>
+<h3>3.6 Control de versiones y entrega</h3>
+<p><strong>Paso 17. Commits.</strong> Los cambios están en la rama <code>feature/crud-hexa-docker</code> del fork, con mensajes descriptivos y sin atribuciones automáticas. El Pull Request #1 compara la rama con <code>main</code>.</p>
+<p><strong>Paso 18. Tag de entrega.</strong> La entrega se marcó con el tag anotado <code>v1.0.0</code> sobre la rama <code>feature/web-thymeleaf</code>, con el mensaje "Entrega Laboratorio 2".</p>
+<hr />
+<h2>4. Conclusiones y lecciones aprendidas</h2>
+<ol>
+<li><strong>La arquitectura hexagonal permitió cambiar la entrada y la persistencia sin tocar el núcleo.</strong> Agregar la CLI y el segundo motor de base de datos no obligó a modificar los casos de uso. Eso se verificó porque las pruebas unitarias del núcleo no cambiaron.</li>
+<li><strong>Las versiones recientes tienen cambios que no están en la documentación de la versión anterior.</strong> Spring Boot 4 movió propiedades de conexión, separó los starters y cambió el tipo de fecha que devuelve Hibernate. Migrar obligó a leer las notas de cada versión.</li>
+<li><strong>Las referencias de MongoDB no son claves foráneas.</strong> Hay que validar la existencia antes de guardar, y el borrado en cascada tiene que escribirse en el código. En MariaDB esto lo resuelve la base y el mapeo de JPA.</li>
+<li><strong>Mapear relaciones en ambos sentidos genera ciclos.</strong> Persona ↔ estudios se volvió recursivo en cuanto había datos. La solución fue mapear los objetos anidados de forma superficial.</li>
+<li><strong>Las pruebas de borde encontraron defectos que las pruebas normales no veían.</strong> Los seis defectos de entrada (DNI negativo, edad negativa, texto demasiado largo, género inválido, fecha mal formada y teléfono vacío) aparecieron solo al probar entradas inválidas. Por eso se agregaron pruebas de integración para esos casos.</li>
+<li><strong>Un archivo en el lugar equivocado puede romper un contenedor.</strong> El runner de pruebas dentro de <code>scripts/</code> hacía que MariaDB fallara al inicializarse, porque la imagen ejecuta todos los <code>.sh</code> de esa carpeta.</li>
+<li><strong>La versión de Java importa.</strong> Lombok 1.18.26 no compila con JDK 21. Con JDK 25 y Lombok 1.18.48 el proyecto compila sin cambios de código.</li>
+<li><strong>Documentar las decisiones es parte del diseño.</strong> Las decisiones de esta entrega (por ejemplo, 200 en lugar de 201 para los POST) quedaron registradas para poder revisarlas.</li>
+</ol>
+<hr />
+<h2>5. Referencias</h2>
+<p>Alistair Cockburn. (2005). <em>Hexagonal architecture</em>. https://alistair.cockburn.us/hexagonal-architecture/</p>
+<p>Brown, S. (2018). <em>The C4 model for visualising software architecture</em>. https://c4model.com/</p>
+<p>Fielding, R. T. (2000). <em>Architectural styles and the design of network-based software architectures</em> [Tesis doctoral, University of California, Irvine]. https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm</p>
+<p>Fowler, M. (2002). <em>Patterns of Enterprise Application Architecture</em>. Addison-Wesley.</p>
+<p>Martin, R. C. (2017). <em>Clean Architecture: A Craftsman's Guide to Software Structure and Design</em>. Prentice Hall.</p>
+<p>OpenAPI Initiative. (2021). <em>OpenAPI Specification 3.0.3</em>. https://spec.openapis.org/oas/v3.0.3</p>
+<p>Spring. <em>Spring Boot reference documentation</em> (versión 4.1). https://docs.spring.io/spring-boot/reference/</p>
+<p>Spring. <em>Spring Data MongoDB reference documentation</em>. https://docs.spring.io/spring-data/mongodb/reference/</p>
+<p>springdoc. <em>springdoc-openapi documentation</em>. https://springdoc.org/</p>
+<p>MariaDB Foundation. <em>MariaDB Knowledge Base</em>. https://mariadb.com/kb/en/</p>
+<p>MongoDB, Inc. <em>MongoDB Manual</em>. https://www.mongodb.com/docs/manual/</p>
+<p>Docker Inc. <em>Docker Compose documentation</em>. https://docs.docker.com/compose/</p>
+<p>PlantUML y C4-PlantUML. https://plantuml.com/ · https://github.com/plantuml-stdlib/C4-PlantUML</p>
+<p>Project Lombok. <em>Lombok features</em>. https://projectlombok.org/features/</p></body></html>

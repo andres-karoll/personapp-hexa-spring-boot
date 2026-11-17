@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
 import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
 import co.edu.javeriana.as.personapp.common.annotations.UseCase;
+import co.edu.javeriana.as.personapp.common.exceptions.AlreadyExistException;
 import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
 import co.edu.javeriana.as.personapp.domain.Person;
 import co.edu.javeriana.as.personapp.domain.Phone;
@@ -17,21 +18,19 @@ import lombok.extern.slf4j.Slf4j;
 @UseCase
 public class PersonUseCase implements PersonInputPort {
 
-	
+
 	private PersonOutputPort personPersintence;
-	
+
 	public PersonUseCase(@Qualifier("personOutputAdapterMaria") PersonOutputPort personPersintence) {
 		this.personPersintence=personPersintence;
 	}
 	
-	@Override
-	public void setPersintence(PersonOutputPort personPersintence) {
-		this.personPersintence=personPersintence;
-	}
 
 	@Override
-	public Person create(Person person) {
+	public Person create(Person person) throws AlreadyExistException {
 		log.debug("Into create on Application Domain");
+		if (personPersintence.findById(person.getIdentification()) != null)
+			throw new AlreadyExistException("The person with id " + person.getIdentification() + " already exists");
 		return personPersintence.save(person);
 	}
 

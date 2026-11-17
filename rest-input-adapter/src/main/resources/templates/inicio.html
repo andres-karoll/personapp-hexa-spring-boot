@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{layout :: cabecera('Inicio')}"></head>
+<body>
+<header th:replace="~{layout :: nav}"></header>
+<main class="contenedor">
+  <h1>Inicio</h1>
+  <p class="secundario">Administra personas, profesiones, teléfonos y estudios. Cada registro se guarda en MariaDB o en MongoDB, según la pantalla que elijas.</p>
+  <div class="barra">
+    <a class="boton primario" th:href="@{/web/personas}">Personas</a>
+    <a class="boton primario" th:href="@{/web/profesiones}">Profesiones</a>
+    <a class="boton primario" th:href="@{/web/telefonos}">Teléfonos</a>
+    <a class="boton primario" th:href="@{/web/estudios}">Estudios</a>
+  </div>
+  <p class="secundario">API REST: <a th:href="@{/swagger-ui.html}">Swagger UI</a></p>
+</main>
+</body>
+</html>

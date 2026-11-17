@@ -1,0 +1,16 @@
+@startuml 02_contexto
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+LAYOUT_LEFT_RIGHT()
+hide stereotype
+title Nivel 1 - Diagrama de Contexto: PersonAPP
+
+Person(operador, "Operador de consola", "Usa el menú para listar, buscar, crear, editar y eliminar.")
+Person(cliente, "Cliente de la API", "Llama a /api/v1 y consulta Swagger UI.")
+
+System(personapp, "PersonAPP", "Sistema que administra personas, profesiones, teléfonos y estudios con dos motores de base de datos.")
+
+Rel(operador, personapp, "Opera el menú", "Consola")
+Rel(cliente, personapp, "Envía peticiones", "HTTP / JSON")
+
+SHOW_LEGEND()
+@enduml

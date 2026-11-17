@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{layout :: cabecera(${titulo})}"></head>
+<body>
+<header th:replace="~{layout :: nav}"></header>
+<main class="contenedor">
+  <div th:replace="~{layout :: avisos}"></div>
+  <h1 th:text="${titulo}">Estudio</h1>
+  <form class="formulario" method="post" th:action="${accion}" th:object="${estudio}">
+    <input type="hidden" th:field="*{database}" th:if="${editando}">
+    <label>Motor de base de datos
+      <input type="text" th:value="${dbNombre}" readonly th:if="${editando}">
+      <select th:field="*{database}" th:unless="${editando}">
+        <option value="MARIA">MariaDB</option>
+        <option value="MONGO">MongoDB</option>
+      </select>
+    </label>
+    <label>Cédula de la persona
+      <input type="number" th:field="*{dniPersona}" th:readonly="${editando}" required>
+    </label>
+    <label>Id de la profesión
+      <input type="number" th:field="*{idProfesion}" th:readonly="${editando}" required>
+    </label>
+    <label>Fecha de grado (opcional)
+      <input type="date" th:field="*{fecha}">
+    </label>
+    <label>Universidad (opcional)
+      <input type="text" th:field="*{universidad}" maxlength="50">
+    </label>
+    <div class="acciones-formulario">
+      <button class="primario" type="submit">Guardar</button>
+      <a th:href="@{/web/estudios(db=${estudio.database})}">Cancelar</a>
+    </div>
+  </form>
+</main>
+</body>
+</html>

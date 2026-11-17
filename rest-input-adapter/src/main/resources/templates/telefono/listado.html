@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{layout :: cabecera('Teléfonos')}"></head>
+<body>
+<header th:replace="~{layout :: nav}"></header>
+<main class="contenedor">
+  <div th:replace="~{layout :: avisos}"></div>
+  <h1>Teléfonos</h1>
+  <div class="barra">
+    <nav class="tabs">
+      <a th:classappend="${db == 'MARIA' ? 'activo' : ''}" th:href="@{/web/telefonos(db='MARIA')}">MariaDB</a>
+      <a th:classappend="${db == 'MONGO' ? 'activo' : ''}" th:href="@{/web/telefonos(db='MONGO')}">MongoDB</a>
+    </nav>
+    <a class="boton primario" th:href="@{/web/telefonos/nuevo(db=${db})}">Nuevo teléfono</a>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Número</th><th>Operador</th><th>Dueño (cédula)</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      <tr th:each="t : ${telefonos}">
+        <td th:text="${t.numero}">3001112233</td>
+        <td th:text="${t.operador}">Claro</td>
+        <td th:text="${t.duenio}">123456789</td>
+        <td class="acciones">
+          <a th:href="@{/web/telefonos/{db}/{numero}/editar(db=${db},numero=${t.numero})}">Editar</a>
+          <a class="enlace-peligro" th:href="@{/web/telefonos/{db}/{numero}/eliminar(db=${db},numero=${t.numero})}">Eliminar</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="secundario" th:if="${#lists.isEmpty(telefonos)}">No hay teléfonos registrados en <span th:text="${dbNombre}">MariaDB</span>.</p>
+</main>
+</body>
+</html>

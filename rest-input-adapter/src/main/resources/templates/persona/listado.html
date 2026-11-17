@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{layout :: cabecera('Personas')}"></head>
+<body>
+<header th:replace="~{layout :: nav}"></header>
+<main class="contenedor">
+  <div th:replace="~{layout :: avisos}"></div>
+  <h1>Personas</h1>
+  <div class="barra">
+    <nav class="tabs">
+      <a th:classappend="${db == 'MARIA' ? 'activo' : ''}" th:href="@{/web/personas(db='MARIA')}">MariaDB</a>
+      <a th:classappend="${db == 'MONGO' ? 'activo' : ''}" th:href="@{/web/personas(db='MONGO')}">MongoDB</a>
+    </nav>
+    <a class="boton primario" th:href="@{/web/personas/nueva(db=${db})}">Nueva persona</a>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Cédula</th><th>Nombre</th><th>Apellido</th><th>Género</th><th>Edad</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      <tr th:each="p : ${personas}">
+        <td th:text="${p.dni}">123</td>
+        <td th:text="${p.firstName}">Nombre</td>
+        <td th:text="${p.lastName}">Apellido</td>
+        <td th:text="${p.sex}">M</td>
+        <td th:text="${p.age}">30</td>
+        <td class="acciones">
+          <a th:href="@{/web/personas/{db}/{id}/editar(db=${db},id=${p.dni})}">Editar</a>
+          <a class="enlace-peligro" th:href="@{/web/personas/{db}/{id}/eliminar(db=${db},id=${p.dni})}">Eliminar</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="secundario" th:if="${#lists.isEmpty(personas)}">No hay personas registradas en <span th:text="${dbNombre}">MariaDB</span>.</p>
+</main>
+</body>
+</html>

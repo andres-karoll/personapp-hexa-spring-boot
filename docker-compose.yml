@@ -1,0 +1,92 @@
+name: personapp
+
+# Levantar todo:      docker compose up -d --build
+# Usar la CLI:        docker compose run --rm cli
+# Logs de la API:     docker compose logs -f api
+# Reiniciar datos:    docker compose down -v   (borra los volúmenes y vuelve a cargar los scripts)
+
+x-app-env: &app-env
+  SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/persona_db
+  SPRING_MONGODB_URI: mongodb://persona_db:persona_db@mongodb:27017/persona_db?authSource=admin
+
+services:
+  mariadb:
+    image: mariadb:latest
+    environment:
+      MARIADB_ROOT_PASSWORD: root_pwd
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      # Se ejecutan en orden alfabético: primero el DDL y luego el DML
+      - ./scripts:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root_pwd
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+
+  # Carga el esquema y los datos de MongoDB (se ejecuta una vez y termina)
+  mongo-init:
+    image: mongo:latest
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./docker/mongo-init.sh:/init.sh:ro
+    entrypoint: ["sh", "/init.sh"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      args:
+        MODULE: rest-input-adapter
+    image: personapp-api:latest
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *app-env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  cli:
+    build:
+      context: .
+      args:
+        MODULE: cli-input-adapter
+    image: personapp-cli:latest
+    profiles: ["cli"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *app-env
+
+volumes:
+  mariadb-data:
+  mongo-data:

@@ -1,0 +1,29 @@
+@startuml 06b_dinamico_eliminar_persona_mongo
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Dynamic.puml
+LAYOUT_TOP_DOWN()
+hide stereotype
+title Diagrama Dinámico: eliminar una persona en MongoDB (borrado en cascada)
+
+Person(cliente, "Cliente HTTP", "DELETE /api/v1/persona/mongo/{id}")
+ContainerDb(mongo, "MongoDB", "persona_db")
+
+Component(ctrl, "PersonaControllerV1", "Controlador REST")
+Component(uc, "PersonUseCase", "Caso de uso")
+Component(out, "PersonOutputAdapterMongo", "Adaptador de salida")
+Component(estRepo, "EstudiosRepositoryMongo", "Repositorio")
+Component(telRepo, "TelefonoRepositoryMongo", "Repositorio")
+Component(perRepo, "PersonaRepositoryMongo", "Repositorio")
+
+Rel(cliente, ctrl, "DELETE", "HTTP")
+Rel(ctrl, uc, "drop(id): ¿existe? (404 si no)")
+Rel(uc, out, "delete(id)")
+Rel(out, estRepo, "1. deleteByPersona(id)")
+Rel(estRepo, mongo, "estudios con primaryPersona = id", "Mongo")
+Rel(out, telRepo, "2. deleteByOwner(id)")
+Rel(telRepo, mongo, "teléfonos con primaryDuenio = id", "Mongo")
+Rel(out, perRepo, "3. deleteById(id)")
+Rel(perRepo, mongo, "documento persona", "Mongo")
+Rel_Back(cliente, ctrl, "204 No Content", "HTTP")
+
+SHOW_LEGEND()
+@enduml

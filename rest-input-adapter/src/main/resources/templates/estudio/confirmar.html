@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{layout :: cabecera('Eliminar estudio')}"></head>
+<body>
+<header th:replace="~{layout :: nav}"></header>
+<main class="contenedor">
+  <h1>Eliminar estudio</h1>
+  <div class="tarjeta">
+    <p>Vas a eliminar el estudio de la persona <strong th:text="${dni}">123</strong>
+      en la profesión <strong th:text="${profesion}">1</strong> de <span th:text="${dbNombre}">MariaDB</span>.</p>
+    <p class="secundario">Esta acción no se puede deshacer.</p>
+    <form method="post" th:action="@{/web/estudios/{db}/{dni}/{prof}/eliminar(db=${db},dni=${dni},prof=${profesion})}">
+      <div class="acciones-formulario">
+        <button class="peligro" type="submit">Eliminar</button>
+        <a th:href="@{/web/estudios(db=${db})}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</main>
+</body>
+</html>

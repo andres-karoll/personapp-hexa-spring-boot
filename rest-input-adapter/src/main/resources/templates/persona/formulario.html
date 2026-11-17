@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{layout :: cabecera(${titulo})}"></head>
+<body>
+<header th:replace="~{layout :: nav}"></header>
+<main class="contenedor">
+  <div th:replace="~{layout :: avisos}"></div>
+  <h1 th:text="${titulo}">Persona</h1>
+  <form class="formulario" method="post" th:action="${accion}" th:object="${persona}">
+    <input type="hidden" th:field="*{database}" th:if="${editando}">
+    <label>Motor de base de datos
+      <input type="text" th:value="${dbNombre}" readonly th:if="${editando}">
+      <select th:field="*{database}" th:unless="${editando}">
+        <option value="MARIA">MariaDB</option>
+        <option value="MONGO">MongoDB</option>
+      </select>
+    </label>
+    <label>Cédula
+      <input type="number" th:field="*{dni}" th:readonly="${editando}" required>
+    </label>
+    <label>Nombre
+      <input type="text" th:field="*{firstName}" maxlength="45" required>
+    </label>
+    <label>Apellido
+      <input type="text" th:field="*{lastName}" maxlength="45" required>
+    </label>
+    <label>Edad (opcional)
+      <input type="number" th:field="*{age}" min="0" max="150">
+    </label>
+    <label>Género
+      <select th:field="*{sex}" required>
+        <option value="M">Masculino (M)</option>
+        <option value="F">Femenino (F)</option>
+      </select>
+    </label>
+    <div class="acciones-formulario">
+      <button class="primario" type="submit">Guardar</button>
+      <a th:href="@{/web/personas(db=${persona.database})}">Cancelar</a>
+    </div>
+  </form>
+</main>
+</body>
+</html>
