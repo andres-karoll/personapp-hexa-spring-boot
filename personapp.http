@@ -1,0 +1,209 @@
+# PersonAPP REST Client - Siguiendo principios SOLID
+# Requisito: docker compose up -d --build
+# Uso: REST Client (VS Code) o HTTP Client (IntelliJ)
+
+### ==================== VARIABLES (D - Dependency Inversion) ====================
+@baseUrl = http://localhost:3000/api/v1
+@db = maria
+@dbAlternative = mongo
+
+### --- URLs por entidad (I - Interface Segregation) ---
+@personaUrl = {{baseUrl}}/persona
+@professionUrl = {{baseUrl}}/profesion
+@phoneUrl = {{baseUrl}}/telefono
+@studyUrl = {{baseUrl}}/estudio
+
+### --- Datos de ejemplo (S - Single Responsibility) ---
+@dniExistente = 123456789
+@dniNuevo = 700000001
+@numberExistente = 3000000001
+@numberNuevo = 3000000002
+@professionId = 1
+@professionIdNew = 10
+
+################################################################################
+# PERSONA - CRUD Operations (O - Open/Closed para extensión)
+################################################################################
+
+### READ - Listar todas las personas (MariaDB)
+GET {{personaUrl}}/{{db}}
+
+### READ - Listar todas las personas (MongoDB - cambia variable @db)
+GET {{personaUrl}}/{{dbAlternative}}
+
+### READ - Consultar una persona específica
+GET {{personaUrl}}/{{db}}/{{dniExistente}}
+
+### CREATE - Persona nueva
+POST {{personaUrl}}
+Content-Type: application/json
+
+{
+  "dni": "{{dniNuevo}}",
+  "firstName": "Ana",
+  "lastName": "Lopez",
+  "age": "25",
+  "sex": "F",
+  "database": "{{db}}"
+}
+
+### UPDATE - Modificar persona existente
+PUT {{personaUrl}}/{{db}}/{{dniNuevo}}
+Content-Type: application/json
+
+{
+  "firstName": "Ana Maria",
+  "lastName": "Lopez",
+  "age": "26",
+  "sex": "F",
+  "database": "{{db}}"
+}
+
+### DELETE - Eliminar persona (cascada: teléfonos y estudios)
+DELETE {{personaUrl}}/{{db}}/{{dniNuevo}}
+
+################################################################################
+# PROFESION - CRUD Operations (I - Segregación de interfaz por entidad)
+################################################################################
+
+### READ - Listar todas las profesiones
+GET {{professionUrl}}/{{db}}
+
+### CREATE - Profesión nueva
+POST {{professionUrl}}
+Content-Type: application/json
+
+{
+  "id": "{{professionIdNew}}",
+  "nombre": "Arquitecto",
+  "descripcion": "Diseña edificios",
+  "database": "{{db}}"
+}
+
+### UPDATE - Modificar profesión
+PUT {{professionUrl}}/{{db}}/{{professionIdNew}}
+Content-Type: application/json
+
+{
+  "nombre": "Arquitecto Senior",
+  "descripcion": "Diseña edificios",
+  "database": "{{db}}"
+}
+
+### DELETE - Eliminar profesión (cascada: estudios)
+DELETE {{professionUrl}}/{{db}}/{{professionIdNew}}
+
+################################################################################
+# TELEFONO - CRUD Operations (L - Liskov Substitution: mismo contrato)
+################################################################################
+
+### READ - Listar todos los teléfonos
+GET {{phoneUrl}}/{{db}}
+
+### READ - Consultar teléfono específico
+GET {{phoneUrl}}/{{db}}/{{numberExistente}}
+
+### CREATE - Teléfono nuevo (requiere que el dueño exista)
+POST {{phoneUrl}}
+Content-Type: application/json
+
+{
+  "numero": "{{numberNuevo}}",
+  "operador": "Claro",
+  "duenio": "{{dniExistente}}",
+  "database": "{{db}}"
+}
+
+### UPDATE - Modificar teléfono
+PUT {{phoneUrl}}/{{db}}/{{numberNuevo}}
+Content-Type: application/json
+
+{
+  "operador": "Tigo",
+  "duenio": "{{dniExistente}}",
+  "database": "{{db}}"
+}
+
+### DELETE - Eliminar teléfono
+DELETE {{phoneUrl}}/{{db}}/{{numberNuevo}}
+
+################################################################################
+# ESTUDIO - CRUD Operations (Composite Key: persona + profesión)
+################################################################################
+
+### READ - Listar todos los estudios
+GET {{studyUrl}}/{{db}}
+
+### READ - Consultar un estudio específico
+GET {{studyUrl}}/{{db}}/{{dniExistente}}/{{professionId}}
+
+### CREATE - Estudio nuevo (requiere persona y profesión existentes)
+POST {{studyUrl}}
+Content-Type: application/json
+
+{
+  "dniPersona": "{{dniExistente}}",
+  "idProfesion": "{{professionId}}",
+  "fecha": "2019-01-01",
+  "universidad": "Universidad de prueba",
+  "database": "{{db}}"
+}
+
+### UPDATE - Modificar estudio
+PUT {{studyUrl}}/{{db}}/{{dniExistente}}/{{professionId}}
+Content-Type: application/json
+
+{
+  "fecha": "2019-02-02",
+  "universidad": "Universidad editada",
+  "database": "{{db}}"
+}
+
+### DELETE - Eliminar estudio
+DELETE {{studyUrl}}/{{db}}/{{dniExistente}}/{{professionId}}
+
+################################################################################
+# MANEJO DE ERRORES - Test cases para validación (S - Responsabilidad clara)
+################################################################################
+
+### ERROR 400 - Base de datos inválida
+GET {{personaUrl}}/oracle
+
+### ERROR 404 - Recurso no encontrado
+GET {{personaUrl}}/{{db}}/999999999
+
+### ERROR 409 - Conflicto (duplicado)
+POST {{personaUrl}}
+Content-Type: application/json
+
+{
+  "dni": "{{dniExistente}}",
+  "firstName": "Duplicada",
+  "lastName": "X",
+  "age": "1",
+  "sex": "M",
+  "database": "{{db}}"
+}
+
+### ERROR 409 - Teléfono de persona inexistente
+POST {{phoneUrl}}
+Content-Type: application/json
+
+{
+  "numero": "3999999999",
+  "operador": "Claro",
+  "duenio": "999999999",
+  "database": "{{db}}"
+}
+
+### ERROR 409 - Estudio con profesión inexistente
+POST {{studyUrl}}
+Content-Type: application/json
+
+{
+  "dniPersona": "{{dniExistente}}",
+  "idProfesion": "999",
+  "fecha": "2019-01-01",
+  "universidad": "Test",
+  "database": "{{db}}"
+}

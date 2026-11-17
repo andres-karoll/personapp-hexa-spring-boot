@@ -1,19 +1,19 @@
 package co.edu.javeriana.as.personapp.adapter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
 import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
 import co.edu.javeriana.as.personapp.application.usecase.PersonUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
+import co.edu.javeriana.as.personapp.common.exceptions.AlreadyExistException;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
+import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
 import co.edu.javeriana.as.personapp.common.setup.DatabaseOption;
-import co.edu.javeriana.as.personapp.domain.Gender;
+import co.edu.javeriana.as.personapp.common.setup.PersistenceRegistry;
 import co.edu.javeriana.as.personapp.domain.Person;
 import co.edu.javeriana.as.personapp.mapper.PersonaMapperRest;
 import co.edu.javeriana.as.personapp.model.request.PersonaRequest;
@@ -25,57 +25,42 @@ import lombok.extern.slf4j.Slf4j;
 public class PersonaInputAdapterRest {
 
 	@Autowired
-	@Qualifier("personOutputAdapterMaria")
-	private PersonOutputPort personOutputPortMaria;
-
-	@Autowired
-	@Qualifier("personOutputAdapterMongo")
-	private PersonOutputPort personOutputPortMongo;
+	private PersistenceRegistry<PersonOutputPort> registry;
 
 	@Autowired
 	private PersonaMapperRest personaMapperRest;
 
-	PersonInputPort personInputPort;
-
-	private String setPersonOutputPortInjection(String dbOption) throws InvalidOptionException {
-		if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
-			personInputPort = new PersonUseCase(personOutputPortMaria);
-			return DatabaseOption.MARIA.toString();
-		} else if (dbOption.equalsIgnoreCase(DatabaseOption.MONGO.toString())) {
-			personInputPort = new PersonUseCase(personOutputPortMongo);
-			return  DatabaseOption.MONGO.toString();
-		} else {
-			throw new InvalidOptionException("Invalid database option: " + dbOption);
-		}
+	private PersonInputPort useCase(String database) throws InvalidOptionException {
+		return new PersonUseCase(registry.resolve(database));
 	}
 
-	public List<PersonaResponse> historial(String database) {
+	private PersonaResponse toResponse(Person person, String database) {
+		return DatabaseOption.MARIA.name().equalsIgnoreCase(database)
+				? personaMapperRest.fromDomainToAdapterRestMaria(person)
+				: personaMapperRest.fromDomainToAdapterRestMongo(person);
+	}
+
+	public List<PersonaResponse> historial(String database) throws InvalidOptionException {
 		log.info("Into historial PersonaEntity in Input Adapter");
-		try {
-			if(setPersonOutputPortInjection(database).equalsIgnoreCase(DatabaseOption.MARIA.toString())){
-				return personInputPort.findAll().stream().map(personaMapperRest::fromDomainToAdapterRestMaria)
-						.collect(Collectors.toList());
-			}else {
-				return personInputPort.findAll().stream().map(personaMapperRest::fromDomainToAdapterRestMongo)
-						.collect(Collectors.toList());
-			}
-			
-		} catch (InvalidOptionException e) {
-			log.warn(e.getMessage());
-			return new ArrayList<PersonaResponse>();
-		}
+		return useCase(database).findAll().stream().map(p -> toResponse(p, database)).collect(Collectors.toList());
 	}
 
-	public PersonaResponse crearPersona(PersonaRequest request) {
-		try {
-			setPersonOutputPortInjection(request.getDatabase());
-			Person person = personInputPort.create(personaMapperRest.fromAdapterToDomain(request));
-			return personaMapperRest.fromDomainToAdapterRestMaria(person);
-		} catch (InvalidOptionException e) {
-			log.warn(e.getMessage());
-			//return new PersonaResponse("", "", "", "", "", "", "");
-		}
-		return null;
+	public PersonaResponse buscar(String database, Integer id) throws InvalidOptionException, NoExistException {
+		return toResponse(useCase(database).findOne(id), database);
 	}
 
+	public PersonaResponse crearPersona(PersonaRequest request) throws InvalidOptionException, AlreadyExistException {
+		Person person = useCase(request.getDatabase()).create(personaMapperRest.fromAdapterToDomain(request));
+		return toResponse(person, request.getDatabase());
+	}
+
+	public PersonaResponse editar(String database, Integer id, PersonaRequest request)
+			throws InvalidOptionException, NoExistException {
+		Person person = personaMapperRest.fromAdapterToDomain(id, request);
+		return toResponse(useCase(database).edit(id, person), database);
+	}
+
+	public void eliminar(String database, Integer id) throws InvalidOptionException, NoExistException {
+		useCase(database).drop(id);
+	}
 }

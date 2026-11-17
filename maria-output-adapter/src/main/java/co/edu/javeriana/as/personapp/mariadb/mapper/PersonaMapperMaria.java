@@ -69,6 +69,13 @@ public class PersonaMapperMaria {
 		return person;
 	}
 
+	public Person fromAdapterToDomainShallow(PersonaEntity personaEntity) {
+		Person person = new Person(personaEntity.getCc(), personaEntity.getNombre(), personaEntity.getApellido(),
+				validateGender(personaEntity.getGenero()));
+		person.setAge(validateAge(personaEntity.getEdad()));
+		return person;
+	}
+
 	private @NonNull Gender validateGender(Character genero) {
 		return genero == 'F' ? Gender.FEMALE : genero == 'M' ? Gender.MALE : Gender.OTHER;
 	}

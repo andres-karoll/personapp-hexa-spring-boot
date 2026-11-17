@@ -1,0 +1,29 @@
+@startuml 01_paisaje
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Context.puml
+LAYOUT_TOP_DOWN()
+hide stereotype
+title Paisaje de Sistemas: Laboratorio 2 - PersonAPP (hexagonal, Spring Boot)
+
+Person(operador, "Operador de consola", "Gestiona los registros desde el menú de la CLI.")
+Person(cliente, "Desarrollador / Cliente de la API", "Consume la API REST con Swagger UI, REST Client o curl.")
+Person(equipo, "Equipo de desarrollo", "Construye, prueba y entrega el proyecto.")
+Person(profesor, "Profesor", "Revisa el código, los scripts y el documento.")
+
+Boundary(universidad, "Laboratorio de Arquitectura de Software", "Organización") {
+  System(personapp, "PersonAPP", "CRUD de persona, profesión, teléfono y estudio con arquitectura hexagonal; API REST, CLI y dos motores de persistencia.")
+}
+
+System_Ext(github, "GitHub", "Repositorio personapp-hexa-spring-boot: código, README, scripts DDL/DML, pruebas y tag de entrega.")
+System_Ext(maven, "Maven Central", "Dependencias: Spring Boot 4.1.2, Lombok, springdoc, MariaDB Connector/J.")
+System_Ext(hub, "Docker Hub", "Imágenes oficiales: mariadb, mongo, eclipse-temurin y maven.")
+
+Rel(operador, personapp, "Administra registros", "Consola (stdin/stdout)")
+Rel(cliente, personapp, "Envía peticiones CRUD", "HTTP / JSON")
+Rel(equipo, personapp, "Desarrolla, prueba y despliega")
+Rel(equipo, github, "Publica commits, PR y tag", "Git / HTTPS")
+Rel(profesor, github, "Revisa la entrega", "HTTPS")
+Rel(equipo, maven, "Descarga dependencias al compilar", "mvn")
+Rel(equipo, hub, "Descarga imágenes base", "docker compose up --build")
+
+SHOW_LEGEND()
+@enduml

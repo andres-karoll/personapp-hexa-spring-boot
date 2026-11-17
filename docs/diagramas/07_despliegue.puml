@@ -1,0 +1,33 @@
+@startuml 07_despliegue
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Deployment.puml
+LAYOUT_TOP_DOWN()
+hide stereotype
+title Despliegue: PersonAPP en Docker Compose (macOS, Apple Silicon)
+
+Deployment_Node(mac, "MacBook (macOS)", "Host de desarrollo") {
+  Deployment_Node(docker, "Docker Desktop", "Motor de contenedores") {
+    Deployment_Node(net, "Red personapp_default", "Bridge de Compose") {
+      Container(api, "personapp-api", "Java 25 JRE · Spring Boot", "API REST en 3000")
+      Container(cli, "personapp-cli", "Java 25 JRE · Spring Boot", "Perfil cli: docker compose run --rm cli")
+      Container(maria, "mariadb", "mariadb:latest", "Puerto 3306 interno, 3307 en el host")
+      Container(mongo, "mongodb", "mongo:latest", "Puerto 27017")
+      Container(init, "mongo-init", "mongo:latest", "Carga único; termina con éxito")
+    }
+    Container(vol1, "volumen mariadb-data", "Volumen Docker", "/var/lib/mysql")
+    Container(vol2, "volumen mongo-data", "Volumen Docker", "/data/db")
+  }
+  Container(host, "Navegador / terminal", "macOS", "Swagger en localhost:3000, consola")
+}
+
+Rel(host, api, "HTTP localhost:3000")
+Rel(host, cli, "Consola interactiva")
+Rel(api, maria, "JDBC mariadb:3306")
+Rel(api, mongo, "mongodb:27017")
+Rel(cli, maria, "JDBC")
+Rel(cli, mongo, "mongodb:27017")
+Rel(init, mongo, "DDL y DML")
+Rel(maria, vol1, "Persiste datos")
+Rel(mongo, vol2, "Persiste datos")
+
+SHOW_LEGEND()
+@enduml

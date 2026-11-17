@@ -1,0 +1,40 @@
+@startuml 04_componentes
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Component.puml
+LAYOUT_TOP_DOWN()
+hide stereotype
+title Nivel 3 - Diagrama de Componentes: API REST de PersonAPP (hexagonal)
+
+Container_Ext(cliente, "Cliente HTTP", "Swagger UI, REST Client o curl")
+
+Container_Boundary(api, "API REST · rest-input-adapter") {
+  Component(ctrl, "Controladores REST", "Spring MVC", "PersonaControllerV1, ProfesionControllerV1, TelefonoControllerV1, EstudioControllerV1")
+  Component(err, "ApiExceptionHandler", "@RestControllerAdvice", "Traduce excepciones a 400, 404 y 409")
+  Component(inadp, "Adaptadores de entrada", "@Adapter", "PersonaInputAdapterRest y similares: eligen el motor y llaman al caso de uso")
+  Component(map, "Mappers y DTOs", "@Mapper", "Validan con Entrada y convierten DTO <-> dominio")
+  Component(cfg, "PersistenceConfig", "@Configuration", "Registra, por agregado, el puerto de salida de cada motor")
+}
+
+Container_Boundary(app, "Núcleo · application + domain") {
+  Component(uc, "Casos de uso", "PersonUseCase, ProfessionUseCase, PhoneUseCase, StudyUseCase", "Reglas de negocio: duplicados, existencia, datos")
+  Component(pin, "Puertos de entrada", "*InputPort", "Contrato que expone el núcleo")
+  Component(pout, "Puertos de salida", "*OutputPort", "Contrato que el núcleo necesita de la persistencia")
+}
+
+Container_Boundary(out, "Adaptadores de salida") {
+  Component(maria, "Adaptadores MariaDB", "@Adapter · JPA", "*OutputAdapterMaria + repositorios JpaRepository y mappers de entidades")
+  Component(mongoA, "Adaptadores MongoDB", "@Adapter · Spring Data", "*OutputAdapterMongo + repositorios MongoRepository y mappers de documentos")
+}
+
+Rel(cliente, ctrl, "Peticiones JSON", "HTTP")
+Rel(ctrl, map, "Convierte la petición")
+Rel(ctrl, inadp, "Delega")
+Rel(err, ctrl, "Maneja excepciones")
+Rel(inadp, cfg, "Obtiene el puerto por motor (PersistenceRegistry)")
+Rel(inadp, uc, "Crea el caso de uso con el puerto elegido")
+Rel(uc, pin, "Implementa")
+Rel(uc, pout, "Usa")
+Rel(maria, pout, "Implementa")
+Rel(mongoA, pout, "Implementa")
+
+SHOW_LEGEND()
+@enduml

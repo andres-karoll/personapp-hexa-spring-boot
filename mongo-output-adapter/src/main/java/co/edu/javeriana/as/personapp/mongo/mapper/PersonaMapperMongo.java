@@ -69,6 +69,13 @@ public class PersonaMapperMongo {
 		return person;
 	}
 
+	public Person fromAdapterToDomainShallow(PersonaDocument personaDocument) {
+		Person person = new Person(personaDocument.getId(), personaDocument.getNombre(),
+				personaDocument.getApellido(), validateGender(personaDocument.getGenero()));
+		person.setAge(validateAge(personaDocument.getEdad()));
+		return person;
+	}
+
 	private @NonNull Gender validateGender(String genero) {
 		return "F".equals(genero) ? Gender.FEMALE : "M".equals(genero) ? Gender.MALE : Gender.OTHER;
 	}

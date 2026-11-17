@@ -4,7 +4,7 @@ DROP USER IF EXISTS 'persona_db'@'%';
 DROP SCHEMA IF EXISTS `persona_db`;
 --
 CREATE USER IF NOT EXISTS 'persona_db'@'%' IDENTIFIED BY 'persona_db';
-CREATE SCHEMA IF NOT EXISTS `persona_db`; 
+CREATE SCHEMA IF NOT EXISTS `persona_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 --
 GRANT EXECUTE, TRIGGER, INSERT, UPDATE, DELETE, SELECT ON `persona_db`.* TO 'persona_db'@'%'; 
 FLUSH PRIVILEGES; 
@@ -18,14 +18,14 @@ CREATE TABLE IF NOT EXISTS `persona_db`.`persona` (
  `genero` ENUM('M', 'F') NOT NULL,
  `edad` INT(3) NULL DEFAULT NULL, 
  CONSTRAINT `persona_pk` PRIMARY KEY (`cc`)
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 --
 CREATE TABLE IF NOT EXISTS `persona_db`.`profesion` (
  `id` INT(6) NOT NULL,
  `nom` VARCHAR(90) NOT NULL,
  `des` TEXT NULL DEFAULT NULL, 
  CONSTRAINT `profesion_pk` PRIMARY KEY (`id`)
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 --
 CREATE TABLE IF NOT EXISTS `persona_db`.`telefono` (
  `num` VARCHAR(15) NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `persona_db`.`telefono` (
  `duenio` INT(15) NOT NULL, 
  CONSTRAINT `telefono_pk` PRIMARY KEY (`num`), 
  CONSTRAINT `telefono_persona_fk` FOREIGN KEY (`duenio`) REFERENCES `persona_db`.`persona` (`cc`)
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 --
 CREATE TABLE IF NOT EXISTS `persona_db`.`estudios` (
  `id_prof` INT(6) NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `persona_db`.`estudios` (
  CONSTRAINT `estudios_pk` PRIMARY KEY (`id_prof`, `cc_per`),
  CONSTRAINT `estudio_persona_fk` FOREIGN KEY (`cc_per`) REFERENCES `persona_db`.`persona` (`cc`), 
  CONSTRAINT `estudio_profesion_fk` FOREIGN KEY (`id_prof`) REFERENCES `persona_db`.`profesion` (`id`)
-);
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 --
 COMMIT;
 FLUSH PRIVILEGES;

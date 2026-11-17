@@ -1,0 +1,27 @@
+@startuml 06a_dinamico_crear_persona_api
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/v2.10.0/C4_Dynamic.puml
+LAYOUT_TOP_DOWN()
+hide stereotype
+title Diagrama Dinámico: crear una persona por la API (POST /api/v1/persona)
+
+Person(cliente, "Cliente HTTP", "Swagger UI o REST Client")
+Container(api, "API REST", "Spring Boot", "Contenedor personapp-api")
+ContainerDb(maria, "MariaDB", "persona_db")
+
+Component(ctrl, "PersonaControllerV1", "Controlador REST")
+Component(adp, "PersonaInputAdapterRest", "Adaptador de entrada")
+Component(reg, "PersistenceRegistry", "Resuelve el puerto de 'maria'")
+Component(uc, "PersonUseCase", "Caso de uso")
+Component(out, "PersonOutputAdapterMaria", "Adaptador de salida JPA")
+
+Rel(cliente, ctrl, "POST JSON", "HTTP")
+Rel(ctrl, adp, "crearPersona(request)")
+Rel(adp, reg, "resolve('maria')")
+Rel(adp, uc, "create(person) con el puerto de MariaDB")
+Rel(uc, out, "findById(cc): ¿ya existe?")
+Rel(uc, out, "save(person)")
+Rel(out, maria, "INSERT persona", "JDBC")
+Rel_Back(cliente, ctrl, "200 con PersonaResponse (409 si existe, 400 si los datos no son válidos)", "HTTP")
+
+SHOW_LEGEND()
+@enduml

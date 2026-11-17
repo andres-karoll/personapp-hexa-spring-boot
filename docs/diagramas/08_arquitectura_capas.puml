@@ -1,0 +1,65 @@
+@startuml 08_arquitectura_capas
+title Arquitectura hexagonal por capas: PersonAPP
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam packageStyle rectangle
+skinparam package {
+  BorderColor #999999
+  BackgroundColor #F5F5F5
+  FontColor #333333
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #1168BD
+  FontColor #222222
+}
+skinparam database {
+  BackgroundColor #E3EEFB
+  BorderColor #1168BD
+}
+skinparam ArrowColor #555555
+
+actor "Operador (CLI)" as cli
+actor "Cliente (REST)" as rest
+
+package "Entrada (adaptadores de entrada)" as entrada {
+  component "API REST\nControllers, Mappers, DTOs" as api
+  component "CLI\nMenús y consola" as consola
+}
+
+package "Núcleo (application + domain)" as nucleo {
+  component "Puertos de entrada\n*InputPort" as pin
+  component "Casos de uso\nPersonUseCase, ..." as uc
+  component "Puertos de salida\n*OutputPort" as pout
+  component "Dominio\nPerson, Phone, Profession, Study" as dom
+}
+
+package "Salida (adaptadores de salida)" as salida {
+  component "MariaDB\nJPA, repositorios, entidades" as maria
+  component "MongoDB\nSpring Data, documentos" as mongoA
+}
+
+database "MariaDB 3307" as dbm
+database "MongoDB 27017" as dbmo
+
+cli --> consola
+rest --> api
+api --> pin
+consola --> pin
+pin <|.. uc
+uc --> pout
+uc --> dom
+maria ..|> pout
+mongoA ..|> pout
+maria --> dbm
+mongoA --> dbmo
+
+note right of nucleo
+  Regla de dependencia: las flechas
+  apuntan hacia el núcleo. El núcleo no
+  conoce Spring Data, JPA ni HTTP.
+end note
+@enduml
