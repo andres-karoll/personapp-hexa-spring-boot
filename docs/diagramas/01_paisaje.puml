@@ -5,19 +5,21 @@ hide stereotype
 title Paisaje de Sistemas: Laboratorio 2 - PersonAPP (hexagonal, Spring Boot)
 
 Person(operador, "Operador de consola", "Gestiona los registros desde el menú de la CLI.")
+Person(usuarioWeb, "Usuario web", "Gestiona los registros desde las pantallas web.")
 Person(cliente, "Desarrollador / Cliente de la API", "Consume la API REST con Swagger UI, REST Client o curl.")
 Person(equipo, "Equipo de desarrollo", "Construye, prueba y entrega el proyecto.")
 Person(profesor, "Profesor", "Revisa el código, los scripts y el documento.")
 
 Boundary(universidad, "Laboratorio de Arquitectura de Software", "Organización") {
-  System(personapp, "PersonAPP", "CRUD de persona, profesión, teléfono y estudio con arquitectura hexagonal; API REST, CLI y dos motores de persistencia.")
+  System(personapp, "PersonAPP", "CRUD de persona, profesión, teléfono y estudio con arquitectura hexagonal; API REST, pantallas web, CLI y dos motores de persistencia.")
 }
 
 System_Ext(github, "GitHub", "Repositorio personapp-hexa-spring-boot: código, README, scripts DDL/DML, pruebas y tag de entrega.")
-System_Ext(maven, "Maven Central", "Dependencias: Spring Boot 4.1.2, Lombok, springdoc, MariaDB Connector/J.")
+System_Ext(maven, "Maven Central", "Dependencias: Spring Boot 4.1.2, Thymeleaf, Lombok, springdoc, MariaDB Connector/J.")
 System_Ext(hub, "Docker Hub", "Imágenes oficiales: mariadb, mongo, eclipse-temurin y maven.")
 
 Rel(operador, personapp, "Administra registros", "Consola (stdin/stdout)")
+Rel(usuarioWeb, personapp, "Administra registros", "HTTP / HTML")
 Rel(cliente, personapp, "Envía peticiones CRUD", "HTTP / JSON")
 Rel(equipo, personapp, "Desarrolla, prueba y despliega")
 Rel(equipo, github, "Publica commits, PR y tag", "Git / HTTPS")

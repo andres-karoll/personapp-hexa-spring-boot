@@ -10,6 +10,12 @@ class PersonaControllerV1 {
   +editar(database, id, request) : PersonaResponse
   +eliminar(database, id) : void  <<204>>
 }
+class PersonaWebController <<@Controller>> {
+  +listado(db) : vista persona/listado
+  +crear(persona) : redirección
+  +editar(db, id, persona) : redirección
+  +eliminar(db, id) : redirección
+}
 class PersonaInputAdapterRest {
   -personaRegistry : PersistenceRegistry<PersonOutputPort>
   -useCase(database) : PersonInputPort
@@ -60,6 +66,7 @@ class PersonaMapperRest <<Mapper>> {
 }
 
 PersonaControllerV1 --> PersonaInputAdapterRest
+PersonaWebController --> PersonaInputAdapterRest
 PersonaInputAdapterRest --> PersistenceRegistry
 PersonaInputAdapterRest ..> PersonUseCase : crea
 PersonaInputAdapterRest --> PersonaMapperRest

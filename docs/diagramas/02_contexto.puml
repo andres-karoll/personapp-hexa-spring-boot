@@ -5,11 +5,13 @@ hide stereotype
 title Nivel 1 - Diagrama de Contexto: PersonAPP
 
 Person(operador, "Operador de consola", "Usa el menú para listar, buscar, crear, editar y eliminar.")
+Person(usuarioWeb, "Usuario web", "Usa las pantallas web para listar, crear, editar y eliminar.")
 Person(cliente, "Cliente de la API", "Llama a /api/v1 y consulta Swagger UI.")
 
 System(personapp, "PersonAPP", "Sistema que administra personas, profesiones, teléfonos y estudios con dos motores de base de datos.")
 
 Rel(operador, personapp, "Opera el menú", "Consola")
+Rel(usuarioWeb, personapp, "Usa las pantallas", "HTTP / HTML")
 Rel(cliente, personapp, "Envía peticiones", "HTTP / JSON")
 
 SHOW_LEGEND()

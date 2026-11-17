@@ -5,16 +5,18 @@ hide stereotype
 title Nivel 2 - Diagrama de Contenedores: PersonAPP (Docker Compose)
 
 Person(operador, "Operador de consola", "Usa el menú interactivo.")
+Person(usuarioWeb, "Usuario web", "Usa las pantallas web en /web.")
 Person(cliente, "Cliente de la API", "Llama a la API REST.")
 
 Boundary(sistema, "PersonAPP", "Sistema de software") {
-  Container(api, "API REST", "Java 25 · Spring Boot 4.1.2", "Contenedor personapp-api (puerto 3000). Expone /api/v1 y Swagger UI.")
+  Container(api, "API REST y pantallas web", "Java 25 · Spring Boot 4.1.2", "Contenedor personapp-api (puerto 3000). Expone /api/v1, las pantallas web en /web y Swagger UI.")
   Container(cli, "CLI", "Java 25 · Spring Boot 4.1.2", "Contenedor personapp-cli (perfil cli). Menú de consola interactivo.")
   ContainerDb(maria, "MariaDB", "MariaDB latest (puerto 3307)", "Base persona_db: tablas persona, profesion, telefono y estudios.")
   ContainerDb(mongo, "MongoDB", "MongoDB latest (puerto 27017)", "Base persona_db con autenticación en admin: colecciones persona, profesion, telefono y estudios.")
   Container(init, "mongo-init", "Shell + mongosh", "Servicio de un solo uso: crea el usuario y carga los datos de MongoDB.")
 }
 
+Rel(usuarioWeb, api, "Usa las pantallas web", "HTTP, HTML")
 Rel(cliente, api, "Llama a /api/v1 y usa /swagger-ui", "HTTP, JSON")
 Rel(operador, cli, "Opera el menú", "Consola")
 Rel(api, maria, "Lee y escribe", "JDBC · mariadb:3306 (red de Compose)")
