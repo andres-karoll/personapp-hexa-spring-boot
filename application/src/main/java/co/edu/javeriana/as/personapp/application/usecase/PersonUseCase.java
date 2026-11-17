@@ -18,9 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @UseCase
 public class PersonUseCase implements PersonInputPort {
 
-	
+
 	private PersonOutputPort personPersintence;
-	
+
 	public PersonUseCase(@Qualifier("personOutputAdapterMaria") PersonOutputPort personPersintence) {
 		this.personPersintence=personPersintence;
 	}

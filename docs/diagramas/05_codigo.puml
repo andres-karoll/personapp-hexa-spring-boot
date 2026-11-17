@@ -1,0 +1,73 @@
+@startuml 05_codigo
+title Nivel 4 - Código: flujo de Persona (clases principales)
+hide empty members
+skinparam classAttributeIconSize 0
+
+class PersonaControllerV1 {
+  +personas(database) : List<PersonaResponse>
+  +buscar(database, id) : PersonaResponse
+  +crearPersona(request) : PersonaResponse
+  +editar(database, id, request) : PersonaResponse
+  +eliminar(database, id) : void  <<204>>
+}
+class PersonaInputAdapterRest {
+  -personaRegistry : PersistenceRegistry<PersonOutputPort>
+  -useCase(database) : PersonInputPort
+  +crearPersona(request) : PersonaResponse
+}
+interface PersonInputPort {
+  +create(person)
+  +edit(id, person)
+  +drop(id)
+  +findAll()
+  +findOne(id)
+}
+interface PersonOutputPort {
+  +save(person)
+  +delete(id)
+  +find()
+  +findById(id)
+}
+class PersonUseCase {
+  +create(person) <<409 si existe>>
+  +edit(id, person) <<404 si no existe>>
+  +drop(id) <<404 si no existe>>
+}
+class PersonOutputAdapterMaria
+class PersonOutputAdapterMongo {
+  +delete(id) <<cascada: estudios y teléfonos>>
+}
+class PersistenceRegistry<T> {
+  +register(option, port)
+  +resolve(database) : T
+}
+class Person {
+  -identification : Integer
+  -firstName : String
+  -lastName : String
+  -gender : Gender
+  -age : Integer
+}
+class PersonaRequest <<DTO>> {
+  dni, firstName, lastName, age, sex, database
+}
+class PersonaResponse <<DTO>> {
+  dni, firstName, lastName, age, sex, database, status
+}
+class PersonaMapperRest <<Mapper>> {
+  +fromAdapterToDomain(request) : Person
+  +fromDomainToAdapterRestMaria(person) : PersonaResponse
+}
+
+PersonaControllerV1 --> PersonaInputAdapterRest
+PersonaInputAdapterRest --> PersistenceRegistry
+PersonaInputAdapterRest ..> PersonUseCase : crea
+PersonaInputAdapterRest --> PersonaMapperRest
+PersonUseCase ..|> PersonInputPort
+PersonUseCase --> PersonOutputPort
+PersonOutputAdapterMaria ..|> PersonOutputPort
+PersonOutputAdapterMongo ..|> PersonOutputPort
+PersonaMapperRest ..> Person
+PersonaMapperRest ..> PersonaRequest
+PersonaMapperRest ..> PersonaResponse
+@enduml
