@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:fragment="cabecera(titulo)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${titulo} + ' · PersonAPP'">PersonAPP</title>
+  <style>
+    :root { --texto: #1f1e1d; --secundario: #5e5d59; --borde: #d8d6cc; --fondo: #faf9f5; --acento: #185FA5; --peligro: #A32D2D; --ok: #3B6D11; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--texto); background: var(--fondo); line-height: 1.5; }
+    header { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; padding: 14px 16px; border-bottom: 0.5px solid var(--borde); background: #fff; }
+    header a.marca { font-weight: 600; color: var(--texto); text-decoration: none; }
+    header nav a { color: var(--acento); text-decoration: none; margin-right: 12px; font-size: 15px; }
+    .contenedor { max-width: 960px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 22px; font-weight: 500; margin: 12px 0 16px; }
+    .barra { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .tabs a { display: inline-block; padding: 6px 12px; border: 0.5px solid var(--borde); border-radius: 8px; color: var(--texto); text-decoration: none; margin-right: 6px; background: #fff; }
+    .tabs a.activo { border-color: var(--acento); color: var(--acento); }
+    .boton, button { display: inline-block; padding: 8px 14px; border-radius: 8px; border: 0.5px solid var(--borde); background: #fff; color: var(--texto); font: inherit; text-decoration: none; cursor: pointer; }
+    .boton.primario, button.primario { background: var(--acento); border-color: var(--acento); color: #fff; }
+    button.peligro { background: var(--peligro); border-color: var(--peligro); color: #fff; }
+    .enlace-peligro { color: var(--peligro); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border: 0.5px solid var(--borde); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 0.5px solid var(--borde); font-size: 15px; }
+    th { font-weight: 500; color: var(--secundario); background: #f5f4ee; }
+    td.acciones a { margin-right: 10px; color: var(--acento); }
+    .aviso { padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 15px; }
+    .aviso.ok { background: #EAF3DE; color: var(--ok); }
+    .aviso.error { background: #FCEBEB; color: var(--peligro); }
+    .formulario { background: #fff; border: 0.5px solid var(--borde); border-radius: 12px; padding: 16px; max-width: 560px; }
+    .formulario label { display: block; margin-bottom: 12px; font-size: 14px; color: var(--secundario); }
+    .formulario input, .formulario select { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; font: inherit; font-size: 15px; color: var(--texto); border: 0.5px solid var(--borde); border-radius: 8px; background: #fff; }
+    .formulario input[readonly] { background: #f5f4ee; color: var(--secundario); }
+    .acciones-formulario { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+    .secundario { color: var(--secundario); font-size: 14px; }
+    .tarjeta { background: #fff; border: 0.5px solid var(--borde); border-radius: 12px; padding: 16px; max-width: 560px; }
+    @media (max-width: 600px) { th, td { font-size: 14px; padding: 8px; } table { font-size: 14px; } }
+  </style>
+</head>
+
+<header th:fragment="nav">
+  <a class="marca" th:href="@{/}">PersonAPP</a>
+  <nav>
+    <a th:href="@{/web/personas}">Personas</a>
+    <a th:href="@{/web/profesiones}">Profesiones</a>
+    <a th:href="@{/web/telefonos}">Teléfonos</a>
+    <a th:href="@{/web/estudios}">Estudios</a>
+  </nav>
+</header>
+
+<div th:fragment="avisos">
+  <div class="aviso ok" th:if="${mensaje}" th:text="${mensaje}">Mensaje</div>
+  <div class="aviso error" th:if="${error}" th:text="${error}">Error</div>
+</div>
+</html>

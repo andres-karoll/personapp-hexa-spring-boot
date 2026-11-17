@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head th:replace="~{layout :: cabecera('Profesiones')}"></head>
+<body>
+<header th:replace="~{layout :: nav}"></header>
+<main class="contenedor">
+  <div th:replace="~{layout :: avisos}"></div>
+  <h1>Profesiones</h1>
+  <div class="barra">
+    <nav class="tabs">
+      <a th:classappend="${db == 'MARIA' ? 'activo' : ''}" th:href="@{/web/profesiones(db='MARIA')}">MariaDB</a>
+      <a th:classappend="${db == 'MONGO' ? 'activo' : ''}" th:href="@{/web/profesiones(db='MONGO')}">MongoDB</a>
+    </nav>
+    <a class="boton primario" th:href="@{/web/profesiones/nueva(db=${db})}">Nueva profesión</a>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Id</th><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      <tr th:each="p : ${profesiones}">
+        <td th:text="${p.id}">1</td>
+        <td th:text="${p.nombre}">Nombre</td>
+        <td th:text="${p.descripcion}">Descripción</td>
+        <td class="acciones">
+          <a th:href="@{/web/profesiones/{db}/{id}/editar(db=${db},id=${p.id})}">Editar</a>
+          <a class="enlace-peligro" th:href="@{/web/profesiones/{db}/{id}/eliminar(db=${db},id=${p.id})}">Eliminar</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="secundario" th:if="${#lists.isEmpty(profesiones)}">No hay profesiones registradas en <span th:text="${dbNombre}">MariaDB</span>.</p>
+</main>
+</body>
+</html>
