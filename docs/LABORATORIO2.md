@@ -4,12 +4,12 @@
 **Facultad:** Ingeniería de Sistemas\
 **Materia:** Arquitectura de Software\
 **Profesor:** Andrés Sánchez\
-**Integrantes:** José Eduardo Valeriano Castiblanco *(completar los demás integrantes)*\
+**Integrantes:** José Eduardo Valeriano Castiblanco, Jorge Andrés Fortich Ordosgoitia y María Camila Beltrán Carreño\
 **Fecha:** 15 de noviembre de 2026\
 **Ciudad:** Bogotá D.C.
 
 **Repositorio:** https://github.com/joseval29/personapp-hexa-spring-boot\
-**Entrega (tag v1.0.0):** https://github.com/joseval29/personapp-hexa-spring-boot/tree/v1.0.0 *(pendiente de crear el tag)*
+**Entrega (tag v1.0.0):** https://github.com/joseval29/personapp-hexa-spring-boot/tree/v1.0.0
 
 ---
 
@@ -544,7 +544,7 @@ Trabajamos en macOS con chip Apple Silicon. Se usó Docker Desktop para las base
 
 **Paso 17. Commits.** Los cambios están en la rama `feature/crud-hexa-docker` del fork, con mensajes descriptivos y sin atribuciones automáticas. El Pull Request #1 compara la rama con `main`.
 
-**Paso 18. Tag de entrega (pendiente).** La entrega se marcará con el tag anotado `v1.0.0` sobre la rama principal, con el mensaje "Entrega Laboratorio 2".
+**Paso 18. Tag de entrega.** La entrega se marcó con el tag anotado `v1.0.0` sobre la rama `feature/web-thymeleaf`, con el mensaje "Entrega Laboratorio 2".
 
 ---
 

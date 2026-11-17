@@ -15,11 +15,11 @@ img { max-width: 100%; display:block; margin: 8px auto; page-break-inside: avoid
 <strong>Facultad:</strong> Ingeniería de Sistemas<br />
 <strong>Materia:</strong> Arquitectura de Software<br />
 <strong>Profesor:</strong> Andrés Sánchez<br />
-<strong>Integrantes:</strong> José Eduardo Valeriano Castiblanco <em>(completar los demás integrantes)</em><br />
+<strong>Integrantes:</strong> José Eduardo Valeriano Castiblanco, Jorge Andrés Fortich Ordosgoitia y María Camila Beltrán Carreño<br />
 <strong>Fecha:</strong> 15 de noviembre de 2026<br />
 <strong>Ciudad:</strong> Bogotá D.C.</p>
 <p><strong>Repositorio:</strong> https://github.com/joseval29/personapp-hexa-spring-boot<br />
-<strong>Entrega (tag v1.0.0):</strong> https://github.com/joseval29/personapp-hexa-spring-boot/tree/v1.0.0 <em>(pendiente de crear el tag)</em></p>
+<strong>Entrega (tag v1.0.0):</strong> https://github.com/joseval29/personapp-hexa-spring-boot/tree/v1.0.0</p>
 <hr />
 <h2>1. Marco conceptual</h2>
 <p><strong>Arquitectura hexagonal (puertos y adaptadores).</strong> Alistair Cockburn propuso en 2005 separar la aplicación en un núcleo (las reglas de negocio) y en adaptadores que conectan el núcleo con el mundo exterior. Los <em>puertos</em> son las interfaces que el núcleo expone (de entrada) o necesita (de salida). Los <em>adaptadores</em> implementan esos puertos: un adaptador REST o de consola llama al núcleo, y un adaptador de MariaDB o de MongoDB es llamado por el núcleo. La ventaja es que el núcleo no depende de Spring, de HTTP ni de una base de datos concreta, y por eso se puede probar sin levantar nada de eso.</p>
@@ -1057,7 +1057,7 @@ img { max-width: 100%; display:block; margin: 8px auto; page-break-inside: avoid
 <p><strong>Paso 16. Pruebas de la CLI.</strong> Se ejecutó la CLI en Docker con guiones de entrada completos en ambas bases: crear, buscar, editar, eliminar, duplicados, referencias inexistentes y opciones inválidas.</p>
 <h3>3.6 Control de versiones y entrega</h3>
 <p><strong>Paso 17. Commits.</strong> Los cambios están en la rama <code>feature/crud-hexa-docker</code> del fork, con mensajes descriptivos y sin atribuciones automáticas. El Pull Request #1 compara la rama con <code>main</code>.</p>
-<p><strong>Paso 18. Tag de entrega (pendiente).</strong> La entrega se marcará con el tag anotado <code>v1.0.0</code> sobre la rama principal, con el mensaje "Entrega Laboratorio 2".</p>
+<p><strong>Paso 18. Tag de entrega.</strong> La entrega se marcó con el tag anotado <code>v1.0.0</code> sobre la rama <code>feature/web-thymeleaf</code>, con el mensaje "Entrega Laboratorio 2".</p>
 <hr />
 <h2>4. Conclusiones y lecciones aprendidas</h2>
 <ol>
